@@ -152,6 +152,39 @@ export const DataProvider = ({ children }) => {
 
     const getProjectById = (projectId) => projects.find(p => p.id === projectId);
 
+    // Create project from converted client
+    const createProjectFromClient = async (clientId, paymentInfo) => {
+        const client = getClientById(clientId);
+        if (!client) {
+            return { success: false, error: 'Client not found' };
+        }
+
+        const projectData = {
+            name: client.name,
+            clientId: client.id,
+            description: `Project for ${client.name}${client.company ? ` - ${client.company}` : ''}`,
+            status: 'planning',
+            financials: {
+                totalAmount: paymentInfo.totalAmount || 0,
+                paidAmount: paymentInfo.paidAmount || 0,
+                dueAmount: paymentInfo.dueAmount || 0,
+                dueDate: paymentInfo.dueDate || null,
+            },
+            documents: [],
+            activities: [
+                {
+                    id: `activity_${Date.now()}`,
+                    type: 'project_created',
+                    title: 'Project Created',
+                    description: `Project created from converted client "${client.name}"`,
+                    timestamp: new Date().toISOString(),
+                }
+            ],
+        };
+
+        return await addProject(projectData);
+    };
+
     // ============ TASKS ============
 
     const fetchTasks = async () => {
@@ -307,6 +340,7 @@ export const DataProvider = ({ children }) => {
                 addProjectModule,
                 updateProjectModule,
                 getProjectById,
+                createProjectFromClient,
                 refreshProjects,
 
                 // Tasks

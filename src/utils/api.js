@@ -3,7 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Change this to your server IP when running backend
 // For Android emulator use 10.0.2.2 for localhost
 // For physical device, use your computer's IP address
-const BASE_URL = 'https://exceptionz-internal-app.vercel.app/api';
+const BASE_URL = 'https://6f2bfc127c65.ngrok-free.app/api';
+// const BASE_URL = 'https://exception-z.com/api';
+
 
 // Storage keys
 const TOKEN_KEY = '@exceptionz_token';
@@ -187,6 +189,28 @@ export const projectsAPI = {
     updateModule: (projectId, moduleId, updates) => apiRequest(`/projects/${projectId}/modules/${moduleId}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
+    }),
+
+    // Financials
+    updateFinancials: (id, financials) => apiRequest(`/projects/${id}/financials`, {
+        method: 'PUT',
+        body: JSON.stringify(financials),
+    }),
+
+    // Documents
+    addDocument: (id, docData) => apiRequest(`/projects/${id}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(docData),
+    }),
+
+    deleteDocument: (projectId, docId) => apiRequest(`/projects/${projectId}/documents/${docId}`, {
+        method: 'DELETE',
+    }),
+
+    // Activities
+    addActivity: (id, activityData) => apiRequest(`/projects/${id}/activities`, {
+        method: 'POST',
+        body: JSON.stringify(activityData),
     }),
 };
 

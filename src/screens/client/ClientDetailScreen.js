@@ -9,6 +9,7 @@ import {
     Alert,
     FlatList,
     StatusBar,
+    Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -29,12 +30,20 @@ const ClientDetailScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { clientId } = route.params;
-    const { getClientById, updateClient, addClientNote, deleteClient } = useData();
+    const { getClientById, updateClient, addClientNote, deleteClient, createProjectFromClient } = useData();
     const { isAdmin } = useAuth();
 
     const client = getClientById(clientId);
     const [newNote, setNewNote] = useState('');
     const [showStatusPicker, setShowStatusPicker] = useState(false);
+
+    // Payment modal state
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentData, setPaymentData] = useState({
+        totalAmount: '',
+        paidAmount: '',
+        dueDate: '',
+    });
 
     if (!client) {
         return (
@@ -61,8 +70,55 @@ const ClientDetailScreen = () => {
     };
 
     const handleStatusChange = async (newStatus) => {
-        await updateClient(clientId, { status: newStatus });
-        setShowStatusPicker(false);
+        if (newStatus === 'converted') {
+            // Show payment modal for converted status
+            setShowStatusPicker(false);
+            setShowPaymentModal(true);
+        } else {
+            await updateClient(clientId, { status: newStatus });
+            setShowStatusPicker(false);
+        }
+    };
+
+    const handleConvertWithPayment = async () => {
+        const total = parseFloat(paymentData.totalAmount) || 0;
+        const paid = parseFloat(paymentData.paidAmount) || 0;
+
+        if (total <= 0) {
+            Alert.alert('Error', 'Please enter a valid total amount');
+            return;
+        }
+
+        // Update client status
+        await updateClient(clientId, { status: 'converted' });
+
+        // Create project from client with payment info
+        const result = await createProjectFromClient(clientId, {
+            totalAmount: total,
+            paidAmount: paid,
+            dueAmount: total - paid,
+            dueDate: paymentData.dueDate || null,
+        });
+
+        setShowPaymentModal(false);
+        setPaymentData({ totalAmount: '', paidAmount: '', dueDate: '' });
+
+        if (result.success) {
+            Alert.alert(
+                'Project Created',
+                `Project "${client.name}" has been created successfully!`,
+                [
+                    {
+                        text: 'View Projects',
+                        onPress: () => {
+                            // Navigate to Projects tab
+                            navigation.navigate('Projects');
+                        },
+                    },
+                    { text: 'Stay Here', style: 'cancel' },
+                ]
+            );
+        }
     };
 
     const handleDelete = () => {
@@ -96,6 +152,12 @@ const ClientDetailScreen = () => {
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    const getDueAmount = () => {
+        const total = parseFloat(paymentData.totalAmount) || 0;
+        const paid = parseFloat(paymentData.paidAmount) || 0;
+        return Math.max(0, total - paid);
     };
 
     const renderNote = ({ item }) => (
@@ -240,238 +302,177 @@ const ClientDetailScreen = () => {
                     )}
                 </View>
             </ScrollView>
+
+            {/* Payment Modal */}
+            <Modal visible={showPaymentModal} animationType="slide" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Convert to Project</Text>
+                            <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
+                                <Icon name="close" size={24} color={COLORS.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.modalSubtitle}>
+                            Enter payment details for "{client.name}"
+                        </Text>
+
+                        <View style={styles.modalForm}>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Total Amount (₹)</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    placeholder="e.g. 50000"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={paymentData.totalAmount}
+                                    onChangeText={(text) => setPaymentData(prev => ({ ...prev, totalAmount: text }))}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Paid Amount (₹)</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    placeholder="e.g. 25000"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={paymentData.paidAmount}
+                                    onChangeText={(text) => setPaymentData(prev => ({ ...prev, paidAmount: text }))}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+
+                            <View style={styles.dueAmountRow}>
+                                <Text style={styles.dueLabel}>Due Amount:</Text>
+                                <Text style={styles.dueValue}>₹{getDueAmount().toLocaleString()}</Text>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Due Date (Optional)</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    placeholder="YYYY-MM-DD"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={paymentData.dueDate}
+                                    onChangeText={(text) => setPaymentData(prev => ({ ...prev, dueDate: text }))}
+                                />
+                            </View>
+                        </View>
+
+                        <TouchableOpacity style={styles.convertButton} onPress={handleConvertWithPayment}>
+                            <Icon name="check-decagram" size={20} color={COLORS.white} />
+                            <Text style={styles.convertButtonText}>Create Project</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
+    container: { flex: 1, backgroundColor: COLORS.background },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.xl + 10,
-        paddingBottom: SPACING.md,
-        backgroundColor: COLORS.white,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl + 10, paddingBottom: SPACING.md,
+        backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: FONTS.sizes.lg,
-        fontWeight: '600',
-        color: COLORS.text,
-    },
+    backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: FONTS.sizes.lg, fontWeight: '600', color: COLORS.text },
     deleteButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.error + '10',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.error + '10',
+        alignItems: 'center', justifyContent: 'center',
     },
-    content: {
-        flex: 1,
-        padding: SPACING.lg,
-    },
-    errorContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    errorText: {
-        fontSize: FONTS.sizes.lg,
-        color: COLORS.error,
-        marginTop: SPACING.md,
-    },
+    content: { flex: 1, padding: SPACING.lg },
+    errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    errorText: { fontSize: FONTS.sizes.lg, color: COLORS.error, marginTop: SPACING.md },
     infoCard: {
-        backgroundColor: COLORS.white,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        marginBottom: SPACING.lg,
-        ...SHADOWS.sm,
+        backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.lg,
+        marginBottom: SPACING.lg, ...SHADOWS.sm,
     },
-    infoHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SPACING.lg,
-    },
-    avatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: {
-        fontSize: FONTS.sizes.xxl,
-        fontWeight: '700',
-    },
-    infoDetails: {
-        flex: 1,
-        marginLeft: SPACING.md,
-    },
-    clientName: {
-        fontSize: FONTS.sizes.xl,
-        fontWeight: '700',
-        color: COLORS.text,
-    },
-    clientCompany: {
-        fontSize: FONTS.sizes.md,
-        color: COLORS.textSecondary,
-        marginTop: 2,
-    },
+    infoHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
+    avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: FONTS.sizes.xxl, fontWeight: '700' },
+    infoDetails: { flex: 1, marginLeft: SPACING.md },
+    clientName: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.text },
+    clientCompany: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, marginTop: 2 },
     statusSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: SPACING.md,
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: COLORS.border,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingVertical: SPACING.md, borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.border,
     },
     statusBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.full,
-        gap: SPACING.xs,
+        flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm, borderRadius: RADIUS.full, gap: SPACING.xs,
     },
-    statusText: {
-        fontSize: FONTS.sizes.sm,
-        fontWeight: '600',
-    },
-    changeStatus: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.xs,
-    },
-    changeText: {
-        fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
-    },
+    statusText: { fontSize: FONTS.sizes.sm, fontWeight: '600' },
+    changeStatus: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+    changeText: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted },
     statusPicker: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: SPACING.sm,
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderColor: COLORS.border,
+        flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm,
+        paddingVertical: SPACING.md, borderBottomWidth: 1, borderColor: COLORS.border,
     },
     statusOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.backgroundLight,
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.md,
-        gap: SPACING.xs,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.backgroundLight,
+        paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, gap: SPACING.xs,
     },
-    statusOptionActive: {
-        backgroundColor: COLORS.primary + '20',
-    },
-    statusOptionText: {
-        fontSize: FONTS.sizes.sm,
-        color: COLORS.text,
-    },
-    contactSection: {
-        paddingTop: SPACING.md,
-        gap: SPACING.sm,
-    },
-    contactRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.md,
-    },
-    contactText: {
-        fontSize: FONTS.sizes.md,
-        color: COLORS.text,
-    },
-    notesSection: {
-        marginBottom: SPACING.xxxl,
-    },
-    sectionTitle: {
-        fontSize: FONTS.sizes.lg,
-        fontWeight: '600',
-        color: COLORS.text,
-        marginBottom: SPACING.md,
-    },
-    addNoteContainer: {
-        flexDirection: 'row',
-        marginBottom: SPACING.md,
-        gap: SPACING.sm,
-    },
+    statusOptionActive: { backgroundColor: COLORS.primary + '20' },
+    statusOptionText: { fontSize: FONTS.sizes.sm, color: COLORS.text },
+    contactSection: { paddingTop: SPACING.md, gap: SPACING.sm },
+    contactRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+    contactText: { fontSize: FONTS.sizes.md, color: COLORS.text },
+    notesSection: { marginBottom: SPACING.xxxl },
+    sectionTitle: { fontSize: FONTS.sizes.lg, fontWeight: '600', color: COLORS.text, marginBottom: SPACING.md },
+    addNoteContainer: { flexDirection: 'row', marginBottom: SPACING.md, gap: SPACING.sm },
     noteInput: {
-        flex: 1,
-        backgroundColor: COLORS.white,
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        fontSize: FONTS.sizes.md,
-        color: COLORS.text,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        minHeight: 48,
+        flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md,
+        fontSize: FONTS.sizes.md, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, minHeight: 48,
     },
     addNoteButton: {
-        width: 48,
-        height: 48,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 48, height: 48, borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
+        alignItems: 'center', justifyContent: 'center',
     },
-    addNoteButtonDisabled: {
-        backgroundColor: COLORS.textMuted,
-    },
+    addNoteButtonDisabled: { backgroundColor: COLORS.textMuted },
     noteCard: {
-        backgroundColor: COLORS.white,
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        marginBottom: SPACING.sm,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+        backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.md,
+        marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
     },
-    noteHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SPACING.sm,
-        gap: SPACING.xs,
+    noteHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm, gap: SPACING.xs },
+    noteAuthor: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.primary, flex: 1 },
+    noteDate: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
+    noteText: { fontSize: FONTS.sizes.md, color: COLORS.text, lineHeight: 20 },
+    emptyNotes: { alignItems: 'center', paddingVertical: SPACING.xl },
+    emptyNotesText: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted, marginTop: SPACING.sm },
+    // Modal styles
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalContent: {
+        backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
+        padding: SPACING.xl, paddingBottom: SPACING.xxxl,
     },
-    noteAuthor: {
-        fontSize: FONTS.sizes.sm,
-        fontWeight: '600',
-        color: COLORS.primary,
-        flex: 1,
+    modalHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm,
     },
-    noteDate: {
-        fontSize: FONTS.sizes.xs,
-        color: COLORS.textMuted,
+    modalTitle: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.text },
+    modalSubtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, marginBottom: SPACING.xl },
+    modalForm: { gap: SPACING.md },
+    inputGroup: { marginBottom: SPACING.sm },
+    inputLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginBottom: SPACING.xs },
+    modalInput: {
+        backgroundColor: COLORS.backgroundLight, borderRadius: RADIUS.md, padding: SPACING.md,
+        fontSize: FONTS.sizes.md, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border,
     },
-    noteText: {
-        fontSize: FONTS.sizes.md,
-        color: COLORS.text,
-        lineHeight: 20,
+    dueAmountRow: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        backgroundColor: COLORS.success + '10', borderRadius: RADIUS.md, padding: SPACING.md,
     },
-    emptyNotes: {
-        alignItems: 'center',
-        paddingVertical: SPACING.xl,
+    dueLabel: { fontSize: FONTS.sizes.md, color: COLORS.text },
+    dueValue: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.success },
+    convertButton: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: COLORS.converted, borderRadius: RADIUS.md, padding: SPACING.lg,
+        marginTop: SPACING.lg, gap: SPACING.sm,
     },
-    emptyNotesText: {
-        fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
-        marginTop: SPACING.sm,
-    },
+    convertButtonText: { color: COLORS.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
 });
 
 export default ClientDetailScreen;
