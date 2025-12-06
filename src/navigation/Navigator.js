@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +35,7 @@ import TaskDetailScreen from '../screens/task/TaskDetailScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator();
 
 // Tab Icon mapping - Updated order: Leads, Tasks, Chat, Projects, Profile
 const TAB_ICONS = {
@@ -93,18 +93,23 @@ const MainTabs = () => {
     return (
         <Tab.Navigator
             initialRouteName="Chat"
+            tabBarPosition="bottom"
             screenOptions={({ route }) => ({
-                headerShown: false,
+                tabBarShowIcon: true,
+                tabBarShowLabel: true,
                 tabBarStyle: styles.tabBar,
                 tabBarActiveTintColor: COLORS.tabBarActive,
                 tabBarInactiveTintColor: COLORS.tabBarInactive,
                 tabBarLabelStyle: styles.tabLabel,
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIndicatorStyle: { backgroundColor: COLORS.primary, height: 3, top: 0 },
+                tabBarIcon: ({ focused, color }) => {
                     const iconName = focused
                         ? TAB_ICONS[route.name].active
                         : TAB_ICONS[route.name].inactive;
                     return <Icon name={iconName} size={24} color={color} />;
                 },
+                swipeEnabled: true,
+                animationEnabled: true,
             })}
         >
             <Tab.Screen
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.tabBarBackground,
         borderTopColor: COLORS.border,
         borderTopWidth: 1,
-        height: 65,
+        height: 75,
         paddingBottom: SPACING.sm,
         paddingTop: SPACING.xs,
         ...SHADOWS.sm,
