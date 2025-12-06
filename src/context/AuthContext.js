@@ -102,6 +102,15 @@ export const AuthProvider = ({ children }) => {
         return result;
     };
 
+    const updateUserProfile = async (updates) => {
+        const result = await authAPI.updateProfile(updates);
+        if (result.success) {
+            setUser(result.data.user);
+            await storeAuthData(await getToken(), result.data.user);
+        }
+        return result;
+    };
+
     const getAllUsers = () => users;
 
     const getActiveUsers = () => users.filter(u => !u.isBlocked);
@@ -125,6 +134,7 @@ export const AuthProvider = ({ children }) => {
                 blockUser,
                 unblockUser,
                 deleteUser,
+                updateUserProfile,
                 getAllUsers,
                 getActiveUsers,
                 getUserById,

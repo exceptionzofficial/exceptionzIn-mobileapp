@@ -16,7 +16,7 @@ import AdminPanel from '../screens/admin/AdminPanel';
 import ChatScreen from '../screens/chat/ChatScreen';
 import ChatRoomScreen from '../screens/chat/ChatRoomScreen';
 
-// Client
+// Client (Leads)
 import ClientScreen from '../screens/client/ClientScreen';
 import AddClientScreen from '../screens/client/AddClientScreen';
 import ClientDetailScreen from '../screens/client/ClientDetailScreen';
@@ -31,15 +31,19 @@ import TaskScreen from '../screens/task/TaskScreen';
 import AddTaskScreen from '../screens/task/AddTaskScreen';
 import TaskDetailScreen from '../screens/task/TaskDetailScreen';
 
+// Profile
+import ProfileScreen from '../screens/profile/ProfileScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Icon mapping
+// Tab Icon mapping - Updated order: Leads, Tasks, Chat, Projects, Profile
 const TAB_ICONS = {
+    Leads: { active: 'account-group', inactive: 'account-group-outline' },
+    Tasks: { active: 'checkbox-marked-circle', inactive: 'checkbox-marked-circle-outline' },
     Chat: { active: 'chat', inactive: 'chat-outline' },
-    Client: { active: 'account-group', inactive: 'account-group-outline' },
-    Project: { active: 'folder', inactive: 'folder-outline' },
-    Task: { active: 'checkbox-marked-circle', inactive: 'checkbox-marked-circle-outline' },
+    Projects: { active: 'folder', inactive: 'folder-outline' },
+    Profile: { active: 'account-circle', inactive: 'account-circle-outline' },
 };
 
 // Chat Stack
@@ -50,10 +54,10 @@ const ChatStack = () => (
     </Stack.Navigator>
 );
 
-// Client Stack
-const ClientStack = () => (
+// Leads (Client) Stack
+const LeadsStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="ClientList" component={ClientScreen} />
+        <Stack.Screen name="LeadsList" component={ClientScreen} />
         <Stack.Screen name="AddClient" component={AddClientScreen} />
         <Stack.Screen name="ClientDetail" component={ClientDetailScreen} />
     </Stack.Navigator>
@@ -77,10 +81,18 @@ const TaskStack = () => (
     </Stack.Navigator>
 );
 
-// Main Tab Navigator
+// Profile Stack
+const ProfileStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+    </Stack.Navigator>
+);
+
+// Main Tab Navigator - Order: Leads, Tasks, Chat (center), Projects, Profile
 const MainTabs = () => {
     return (
         <Tab.Navigator
+            initialRouteName="Chat"
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarStyle: styles.tabBar,
@@ -96,24 +108,29 @@ const MainTabs = () => {
             })}
         >
             <Tab.Screen
+                name="Leads"
+                component={LeadsStack}
+                options={{ tabBarLabel: 'Leads' }}
+            />
+            <Tab.Screen
+                name="Tasks"
+                component={TaskStack}
+                options={{ tabBarLabel: 'Tasks' }}
+            />
+            <Tab.Screen
                 name="Chat"
                 component={ChatStack}
                 options={{ tabBarLabel: 'Chat' }}
             />
             <Tab.Screen
-                name="Client"
-                component={ClientStack}
-                options={{ tabBarLabel: 'Clients' }}
-            />
-            <Tab.Screen
-                name="Project"
+                name="Projects"
                 component={ProjectStack}
                 options={{ tabBarLabel: 'Projects' }}
             />
             <Tab.Screen
-                name="Task"
-                component={TaskStack}
-                options={{ tabBarLabel: 'Tasks' }}
+                name="Profile"
+                component={ProfileStack}
+                options={{ tabBarLabel: 'Profile' }}
             />
         </Tab.Navigator>
     );
@@ -121,7 +138,7 @@ const MainTabs = () => {
 
 // Main App with Header
 const MainWithHeader = ({ navigation }) => {
-    const { isAdmin, user, logout } = useAuth();
+    const { isAdmin, user } = useAuth();
 
     return (
         <View style={styles.container}>
@@ -143,12 +160,6 @@ const MainWithHeader = ({ navigation }) => {
                             <Icon name="cog" size={22} color={COLORS.textSecondary} />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={logout}
-                    >
-                        <Icon name="logout" size={22} color={COLORS.error} />
-                    </TouchableOpacity>
                 </View>
             </View>
             <MainTabs />
@@ -249,8 +260,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.tabBarBackground,
         borderTopColor: COLORS.border,
         borderTopWidth: 1,
-        height: 60,
-        paddingBottom: SPACING.xs,
+        height: 65,
+        paddingBottom: SPACING.sm,
         paddingTop: SPACING.xs,
         ...SHADOWS.sm,
     },

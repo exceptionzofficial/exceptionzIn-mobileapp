@@ -106,6 +106,11 @@ export const authAPI = {
 
     getMe: () => apiRequest('/auth/me'),
 
+    updateProfile: (updates) => apiRequest('/auth/me', {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+    }),
+
     getUsers: () => apiRequest('/auth/users'),
 
     createUser: (userData) => apiRequest('/auth/users', {
