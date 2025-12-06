@@ -5,30 +5,45 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import Navigator from './src/navigation/Navigator';
 import SplashScreen from './src/screens/SplashScreen';
-import { COLORS } from './src/utils/theme';
+
+const AppContent = ({ onSplashFinish, showSplash }) => {
+  const { colors, isDark } = useTheme();
+
+  if (showSplash) {
+    return <SplashScreen onFinish={onSplashFinish} />;
+  }
+
+  return (
+    <>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+        translucent={false}
+      />
+      <AuthProvider>
+        <DataProvider>
+          <Navigator />
+        </DataProvider>
+      </AuthProvider>
+    </>
+  );
+};
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
-  if (showSplash) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={COLORS.background}
-          translucent={false}
-        />
-        <AuthProvider>
-          <DataProvider>
-            <Navigator />
-          </DataProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AppContent
+            showSplash={showSplash}
+            onSplashFinish={() => setShowSplash(false)}
+          />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

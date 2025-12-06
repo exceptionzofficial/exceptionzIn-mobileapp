@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,20 +12,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useData } from '../../context/DataContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
-
-const STATUS_CONFIG = {
-    planning: { label: 'Planning', color: COLORS.info, icon: 'clipboard-text-outline' },
-    in_progress: { label: 'In Progress', color: COLORS.warning, icon: 'progress-clock' },
-    review: { label: 'Review', color: COLORS.newLead, icon: 'file-search-outline' },
-    completed: { label: 'Completed', color: COLORS.success, icon: 'check-circle-outline' },
-};
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ProjectScreen = () => {
     const navigation = useNavigation();
     const { projects, getClientById } = useData();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+
+    const STATUS_CONFIG = {
+        planning: { label: 'Planning', color: colors.info, icon: 'clipboard-text-outline' },
+        in_progress: { label: 'In Progress', color: colors.warning, icon: 'progress-clock' },
+        review: { label: 'Review', color: '#7C3AED', icon: 'file-search-outline' },
+        completed: { label: 'Completed', color: colors.success, icon: 'check-circle-outline' },
+    };
 
     const filteredProjects = projects.filter(project => {
         const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -61,7 +64,7 @@ const ProjectScreen = () => {
                     style={[styles.filterChip, filterStatus === key && styles.filterChipActive]}
                     onPress={() => setFilterStatus(key)}
                 >
-                    <Icon name={value.icon} size={14} color={filterStatus === key ? COLORS.white : value.color} />
+                    <Icon name={value.icon} size={14} color={filterStatus === key ? colors.white : value.color} />
                     <Text style={[styles.filterText, filterStatus === key && styles.filterTextActive]}>
                         {projects.filter(p => p.status === key).length}
                     </Text>
@@ -85,7 +88,7 @@ const ProjectScreen = () => {
                         <Text style={styles.projectName}>{item.name}</Text>
                         {client && (
                             <View style={styles.clientRow}>
-                                <Icon name="account-outline" size={14} color={COLORS.textMuted} />
+                                <Icon name="account-outline" size={14} color={colors.textMuted} />
                                 <Text style={styles.clientName}>{client.name}</Text>
                             </View>
                         )}
@@ -117,12 +120,12 @@ const ProjectScreen = () => {
 
                 <View style={styles.projectFooter}>
                     <View style={styles.footerItem}>
-                        <Icon name="puzzle-outline" size={14} color={COLORS.textMuted} />
+                        <Icon name="puzzle-outline" size={14} color={colors.textMuted} />
                         <Text style={styles.footerText}>{item.modules?.length || 0} modules</Text>
                     </View>
                     {item.dueDate && (
                         <View style={styles.footerItem}>
-                            <Icon name="calendar-outline" size={14} color={COLORS.textMuted} />
+                            <Icon name="calendar-outline" size={14} color={colors.textMuted} />
                             <Text style={styles.footerText}>Due {formatDate(item.dueDate)}</Text>
                         </View>
                     )}
@@ -133,14 +136,14 @@ const ProjectScreen = () => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Icon name="folder-open-outline" size={64} color={COLORS.textMuted} />
+            <Icon name="folder-open-outline" size={64} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No Projects Yet</Text>
             <Text style={styles.emptyText}>Create your first project to get started</Text>
             <TouchableOpacity
                 style={styles.emptyButton}
                 onPress={() => navigation.navigate('AddProject')}
             >
-                <Icon name="plus" size={18} color={COLORS.white} />
+                <Icon name="plus" size={18} color={colors.white} />
                 <Text style={styles.emptyButtonText}>Create Project</Text>
             </TouchableOpacity>
         </View>
@@ -148,8 +151,6 @@ const ProjectScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Projects</Text>
@@ -158,17 +159,17 @@ const ProjectScreen = () => {
 
             {/* Search */}
             <View style={styles.searchContainer}>
-                <Icon name="magnify" size={20} color={COLORS.textMuted} />
+                <Icon name="magnify" size={20} color={colors.textMuted} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search projects..."
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                 />
                 {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Icon name="close-circle" size={18} color={COLORS.textMuted} />
+                        <Icon name="close-circle" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -191,16 +192,16 @@ const ProjectScreen = () => {
                 style={styles.fab}
                 onPress={() => navigation.navigate('AddProject')}
             >
-                <Icon name="plus" size={24} color={COLORS.white} />
+                <Icon name="plus" size={24} color={colors.white} />
             </TouchableOpacity>
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
         paddingHorizontal: SPACING.xl,
@@ -210,29 +211,29 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: FONTS.sizes.xxl,
         fontWeight: '700',
-        color: COLORS.text,
+        color: colors.text,
     },
     headerSubtitle: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginTop: SPACING.xs,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         marginHorizontal: SPACING.lg,
         marginBottom: SPACING.md,
         paddingHorizontal: SPACING.md,
         borderRadius: RADIUS.lg,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     searchInput: {
         flex: 1,
         padding: SPACING.md,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
     },
     filterContainer: {
         flexDirection: 'row',
@@ -247,21 +248,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.sm,
         borderRadius: RADIUS.full,
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         gap: SPACING.xs,
     },
     filterChipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     filterText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     filterTextActive: {
-        color: COLORS.white,
+        color: colors.white,
         fontWeight: '600',
     },
     listContent: {
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
         paddingBottom: 100,
     },
     projectCard: {
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.lg,
         padding: SPACING.lg,
         marginBottom: SPACING.md,
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     projectName: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     clientRow: {
         flexDirection: 'row',
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     },
     clientName: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     statusBadge: {
         flexDirection: 'row',
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
     },
     projectDescription: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginBottom: SPACING.md,
         lineHeight: 18,
     },
@@ -328,22 +329,22 @@ const styles = StyleSheet.create({
     },
     progressLabel: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     progressValue: {
         fontSize: FONTS.sizes.sm,
         fontWeight: '600',
-        color: COLORS.primary,
+        color: colors.primary,
     },
     progressBar: {
         height: 6,
-        backgroundColor: COLORS.backgroundLight,
+        backgroundColor: colors.backgroundLight,
         borderRadius: 3,
         overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         borderRadius: 3,
     },
     projectFooter: {
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingTop: SPACING.md,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: colors.border,
     },
     footerItem: {
         flexDirection: 'row',
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     emptyContainer: {
         alignItems: 'center',
@@ -370,27 +371,27 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
         marginTop: SPACING.lg,
         marginBottom: SPACING.sm,
     },
     emptyText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         textAlign: 'center',
         marginBottom: SPACING.xl,
     },
     emptyButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         paddingHorizontal: SPACING.xl,
         paddingVertical: SPACING.md,
         borderRadius: RADIUS.md,
         gap: SPACING.sm,
     },
     emptyButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
     },
@@ -401,7 +402,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.lg,

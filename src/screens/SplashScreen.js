@@ -8,9 +8,12 @@ import {
     Dimensions,
     StatusBar,
 } from 'react-native';
-import { COLORS, FONTS, SPACING } from '../utils/theme';
+import { COLORS, FONTS, SPACING, GRADIENTS } from '../utils/theme';
 
 const { width, height } = Dimensions.get('window');
+
+// Force dark splash screen for premium feel
+const SPLASH_BG = '#0F172A';
 
 const SplashScreen = ({ onFinish }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -19,22 +22,20 @@ const SplashScreen = ({ onFinish }) => {
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
+        // ... (Animation logic remains the same)
         // Start animations
         Animated.parallel([
-            // Fade in
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 800,
                 useNativeDriver: true,
             }),
-            // Scale up
             Animated.spring(scaleAnim, {
                 toValue: 1,
                 friction: 8,
                 tension: 40,
                 useNativeDriver: true,
             }),
-            // Slide up
             Animated.timing(slideAnim, {
                 toValue: 0,
                 duration: 800,
@@ -42,7 +43,6 @@ const SplashScreen = ({ onFinish }) => {
             }),
         ]).start();
 
-        // Pulse animation for logo glow
         Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, {
@@ -58,7 +58,6 @@ const SplashScreen = ({ onFinish }) => {
             ])
         ).start();
 
-        // Auto finish after 2.5 seconds
         const timer = setTimeout(() => {
             Animated.timing(fadeAnim, {
                 toValue: 0,
@@ -74,7 +73,7 @@ const SplashScreen = ({ onFinish }) => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={COLORS.splashBackground} />
+            <StatusBar barStyle="light-content" backgroundColor={SPLASH_BG} translucent />
 
             {/* Background Gradient Effect */}
             <View style={styles.gradientOverlay}>
@@ -132,7 +131,7 @@ const SplashScreen = ({ onFinish }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.splashBackground,
+        backgroundColor: SPLASH_BG,
         alignItems: 'center',
         justifyContent: 'center',
     },

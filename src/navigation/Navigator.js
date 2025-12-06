@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useAuth } from '../context/AuthContext';
-import { COLORS, FONTS, SPACING, SHADOWS, GRADIENTS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
+import { FONTS, SPACING, SHADOWS } from '../utils/theme';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 // Screens
@@ -92,9 +93,11 @@ const ProfileStack = () => (
 
 // Custom Gradient Tab Bar
 const CustomTabBar = ({ state, descriptors, navigation }) => {
+    const { gradients, colors } = useTheme();
+
     return (
         <LinearGradient
-            colors={['#1E3A8A', '#1E40AF', '#0891B2']}
+            colors={gradients.primary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientTabBar}
@@ -131,10 +134,15 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                             <Icon
                                 name={iconName}
                                 size={22}
-                                color={isFocused ? COLORS.white : 'rgba(255, 255, 255, 0.6)'}
+                                color={colors.white}
+                                style={{ opacity: isFocused ? 1 : 0.7 }}
                             />
                         </View>
-                        <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+                        <Text style={[
+                            styles.tabLabel,
+                            { color: colors.white, opacity: isFocused ? 1 : 0.7 },
+                            isFocused && styles.tabLabelActive
+                        ]}>
                             {label}
                         </Text>
                     </TouchableOpacity>
@@ -168,22 +176,23 @@ const MainTabs = () => {
 // Main App with Gradient Header
 const MainWithHeader = ({ navigation }) => {
     const { isAdmin, user } = useAuth();
+    const { colors, gradients } = useTheme();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
             {/* Gradient Header */}
             <LinearGradient
-                colors={GRADIENTS.primary}
+                colors={gradients.primary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
                     <View style={styles.headerLeft}>
-                        <Text style={styles.headerTitle}>EXCEPTIONZ</Text>
-                        <Text style={styles.headerSubtitle}>
+                        <Text style={[styles.headerTitle, { color: colors.white }]}>EXCEPTIONZ</Text>
+                        <Text style={[styles.headerSubtitle, { color: 'rgba(255, 255, 255, 0.8)' }]}>
                             {user?.name} {isAdmin ? '• Admin' : ''}
                         </Text>
                     </View>
@@ -193,7 +202,7 @@ const MainWithHeader = ({ navigation }) => {
                                 style={styles.headerButton}
                                 onPress={() => navigation.navigate('AdminPanel')}
                             >
-                                <Icon name="cog" size={22} color={COLORS.white} />
+                                <Icon name="cog" size={22} color={colors.white} />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -223,21 +232,37 @@ const AuthStack = () => (
 // Main Navigator
 const Navigator = () => {
     const { user, isLoading } = useAuth();
+    const { gradients, isDark, colors } = useTheme();
+
+    // Navigation Theme for React Navigation internals (backgrounds etc)
+    const BaseTheme = isDark ? DarkTheme : DefaultTheme;
+    const navigationTheme = {
+        ...BaseTheme,
+        colors: {
+            ...BaseTheme.colors,
+            primary: colors.primary,
+            background: colors.background,
+            card: colors.backgroundCard,
+            text: colors.text,
+            border: colors.border,
+            notification: colors.secondary,
+        },
+    };
 
     if (isLoading) {
         return (
             <LinearGradient
-                colors={GRADIENTS.splash}
+                colors={gradients.splash}
                 style={styles.loadingContainer}
             >
-                <LoadingSpinner size={60} />
-                <Text style={styles.loadingText}>Loading...</Text>
+                <LoadingSpinner size={60} color={colors.white} />
+                <Text style={[styles.loadingText, { color: colors.white }]}>Loading...</Text>
             </LinearGradient>
         );
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer theme={navigationTheme}>
             {user ? <AppStack /> : <AuthStack />}
         </NavigationContainer>
     );
@@ -246,7 +271,6 @@ const Navigator = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
     },
     loadingContainer: {
         flex: 1,
@@ -254,7 +278,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     loadingText: {
-        color: COLORS.white,
         fontSize: FONTS.sizes.md,
         marginTop: SPACING.lg,
         fontWeight: '500',
@@ -276,12 +299,10 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: FONTS.sizes.xl,
         fontWeight: '800',
-        color: COLORS.white,
         letterSpacing: 2,
     },
     headerSubtitle: {
         fontSize: FONTS.sizes.sm,
-        color: 'rgba(255, 255, 255, 0.8)',
         marginTop: 2,
     },
     headerRight: {
@@ -322,11 +343,9 @@ const styles = StyleSheet.create({
     },
     tabLabel: {
         fontSize: FONTS.sizes.xs,
-        color: 'rgba(255, 255, 255, 0.6)',
         marginTop: 2,
     },
     tabLabelActive: {
-        color: COLORS.white,
         fontWeight: '600',
     },
 });

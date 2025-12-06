@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { COLORS, FONTS, SPACING, GRADIENTS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
+import { SPACING, FONTS } from '../utils/theme';
 
 const GradientHeader = ({
     title,
@@ -12,9 +13,11 @@ const GradientHeader = ({
     subtitle,
     showBack = true,
 }) => {
+    const { colors, gradients } = useTheme();
+
     return (
         <LinearGradient
-            colors={GRADIENTS.primary}
+            colors={gradients.primary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -26,16 +29,16 @@ const GradientHeader = ({
                 <View style={styles.leftSection}>
                     {showBack && onBack && (
                         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-                            <Icon name="arrow-left" size={24} color={COLORS.white} />
+                            <Icon name="arrow-left" size={24} color={colors.white} />
                         </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Center - Title */}
                 <View style={styles.centerSection}>
-                    <Text style={styles.title} numberOfLines={1}>{title}</Text>
+                    <Text style={[styles.title, { color: colors.white }]} numberOfLines={1}>{title}</Text>
                     {subtitle && (
-                        <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+                        <Text style={[styles.subtitle, { color: 'rgba(255, 255, 255, 0.7)' }]} numberOfLines={1}>{subtitle}</Text>
                     )}
                 </View>
 
@@ -43,7 +46,7 @@ const GradientHeader = ({
                 <View style={styles.rightSection}>
                     {rightIcon && (
                         <TouchableOpacity style={styles.actionButton} onPress={onRightPress}>
-                            <Icon name={rightIcon} size={22} color={COLORS.white} />
+                            <Icon name={rightIcon} size={22} color={colors.white} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -54,7 +57,7 @@ const GradientHeader = ({
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: StatusBar.currentHeight || 44,
+        paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
         paddingBottom: SPACING.md,
         paddingHorizontal: SPACING.lg,
     },
@@ -86,12 +89,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '700',
-        color: COLORS.white,
         letterSpacing: 0.5,
     },
     subtitle: {
         fontSize: FONTS.sizes.xs,
-        color: 'rgba(255, 255, 255, 0.7)',
         marginTop: 2,
     },
     actionButton: {

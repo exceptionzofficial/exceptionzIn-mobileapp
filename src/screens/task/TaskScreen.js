@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -13,27 +13,30 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
-
-const STATUS_CONFIG = {
-    todo: { label: 'To Do', color: COLORS.info, icon: 'checkbox-blank-circle-outline' },
-    in_progress: { label: 'In Progress', color: COLORS.warning, icon: 'progress-clock' },
-    done: { label: 'Done', color: COLORS.success, icon: 'check-circle' },
-};
-
-const PRIORITY_CONFIG = {
-    high: { label: 'High', color: COLORS.error, icon: 'arrow-up-bold' },
-    medium: { label: 'Medium', color: COLORS.warning, icon: 'minus' },
-    low: { label: 'Low', color: COLORS.success, icon: 'arrow-down-bold' },
-};
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const TaskScreen = () => {
     const navigation = useNavigation();
     const { tasks, getProjectById } = useData();
     const { user } = useAuth();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [showMyTasks, setShowMyTasks] = useState(false);
+
+    const STATUS_CONFIG = {
+        todo: { label: 'To Do', color: colors.info, icon: 'checkbox-blank-circle-outline' },
+        in_progress: { label: 'In Progress', color: colors.warning, icon: 'progress-clock' },
+        done: { label: 'Done', color: colors.success, icon: 'check-circle' },
+    };
+
+    const PRIORITY_CONFIG = {
+        high: { label: 'High', color: colors.error, icon: 'arrow-up-bold' },
+        medium: { label: 'Medium', color: colors.warning, icon: 'minus' },
+        low: { label: 'Low', color: colors.success, icon: 'arrow-down-bold' },
+    };
 
     const filteredTasks = tasks.filter(task => {
         const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -74,7 +77,7 @@ const TaskScreen = () => {
                     style={[styles.filterChip, filterStatus === key && styles.filterChipActive]}
                     onPress={() => setFilterStatus(key)}
                 >
-                    <Icon name={value.icon} size={14} color={filterStatus === key ? COLORS.white : value.color} />
+                    <Icon name={value.icon} size={14} color={filterStatus === key ? colors.white : value.color} />
                     <Text style={[styles.filterText, filterStatus === key && styles.filterTextActive]}>
                         {tasks.filter(t => t.status === key).length}
                     </Text>
@@ -100,7 +103,7 @@ const TaskScreen = () => {
                         <Text style={styles.taskTitle}>{item.title}</Text>
                         {project && (
                             <View style={styles.projectRow}>
-                                <Icon name="folder-outline" size={12} color={COLORS.textMuted} />
+                                <Icon name="folder-outline" size={12} color={colors.textMuted} />
                                 <Text style={styles.projectName}>{project.name}</Text>
                             </View>
                         )}
@@ -123,14 +126,14 @@ const TaskScreen = () => {
                         </View>
                         {item.assignedToName && (
                             <View style={styles.assigneeRow}>
-                                <Icon name="account-outline" size={12} color={COLORS.textMuted} />
+                                <Icon name="account-outline" size={12} color={colors.textMuted} />
                                 <Text style={styles.assigneeName}>{item.assignedToName}</Text>
                             </View>
                         )}
                     </View>
                     {item.dueDate && (
                         <View style={[styles.dueDate, overdue && styles.dueDateOverdue]}>
-                            <Icon name={overdue ? 'alert-outline' : 'calendar-outline'} size={12} color={overdue ? COLORS.error : COLORS.textMuted} />
+                            <Icon name={overdue ? 'alert-outline' : 'calendar-outline'} size={12} color={overdue ? colors.error : colors.textMuted} />
                             <Text style={[styles.dueDateText, overdue && styles.dueDateTextOverdue]}>
                                 {formatDate(item.dueDate)}
                             </Text>
@@ -143,11 +146,11 @@ const TaskScreen = () => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Icon name="checkbox-marked-circle-outline" size={64} color={COLORS.textMuted} />
+            <Icon name="checkbox-marked-circle-outline" size={64} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No Tasks Yet</Text>
             <Text style={styles.emptyText}>Create your first task to get started</Text>
             <TouchableOpacity style={styles.emptyButton} onPress={() => navigation.navigate('AddTask')}>
-                <Icon name="plus" size={18} color={COLORS.white} />
+                <Icon name="plus" size={18} color={colors.white} />
                 <Text style={styles.emptyButtonText}>Create Task</Text>
             </TouchableOpacity>
         </View>
@@ -155,8 +158,6 @@ const TaskScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerTop}>
@@ -168,7 +169,7 @@ const TaskScreen = () => {
                         style={[styles.myTasksToggle, showMyTasks && styles.myTasksToggleActive]}
                         onPress={() => setShowMyTasks(!showMyTasks)}
                     >
-                        <Icon name="account-check-outline" size={18} color={showMyTasks ? COLORS.white : COLORS.primary} />
+                        <Icon name="account-check-outline" size={18} color={showMyTasks ? colors.white : colors.primary} />
                         <Text style={[styles.myTasksText, showMyTasks && styles.myTasksTextActive]}>My Tasks</Text>
                     </TouchableOpacity>
                 </View>
@@ -176,17 +177,17 @@ const TaskScreen = () => {
 
             {/* Search */}
             <View style={styles.searchContainer}>
-                <Icon name="magnify" size={20} color={COLORS.textMuted} />
+                <Icon name="magnify" size={20} color={colors.textMuted} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search tasks..."
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                 />
                 {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Icon name="close-circle" size={18} color={COLORS.textMuted} />
+                        <Icon name="close-circle" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -206,67 +207,67 @@ const TaskScreen = () => {
 
             {/* FAB */}
             <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTask')}>
-                <Icon name="plus" size={24} color={COLORS.white} />
+                <Icon name="plus" size={24} color={colors.white} />
             </TouchableOpacity>
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
+const getStyles = (colors) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
     header: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: SPACING.md },
     headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    headerTitle: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.text },
-    headerSubtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
+    headerTitle: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: colors.text },
+    headerSubtitle: { fontSize: FONTS.sizes.sm, color: colors.textSecondary, marginTop: SPACING.xs },
     myTasksToggle: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.primary, gap: SPACING.xs,
+        borderRadius: RADIUS.full, borderWidth: 1, borderColor: colors.primary, gap: SPACING.xs,
     },
-    myTasksToggleActive: { backgroundColor: COLORS.primary },
-    myTasksText: { fontSize: FONTS.sizes.sm, color: COLORS.primary, fontWeight: '500' },
-    myTasksTextActive: { color: COLORS.white },
+    myTasksToggleActive: { backgroundColor: colors.primary },
+    myTasksText: { fontSize: FONTS.sizes.sm, color: colors.primary, fontWeight: '500' },
+    myTasksTextActive: { color: colors.white },
     searchContainer: {
-        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: colors.backgroundCard,
         marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: SPACING.md,
-        borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border,
+        borderRadius: RADIUS.lg, borderWidth: 1, borderColor: colors.border,
     },
-    searchInput: { flex: 1, padding: SPACING.md, fontSize: FONTS.sizes.md, color: COLORS.text },
+    searchInput: { flex: 1, padding: SPACING.md, fontSize: FONTS.sizes.md, color: colors.text },
     filterRow: { flexDirection: 'row', paddingHorizontal: SPACING.lg, marginBottom: SPACING.md, flexWrap: 'wrap', gap: SPACING.sm },
     filterChip: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, gap: SPACING.xs,
+        borderRadius: RADIUS.full, backgroundColor: colors.backgroundCard, borderWidth: 1, borderColor: colors.border, gap: SPACING.xs,
     },
-    filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-    filterText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-    filterTextActive: { color: COLORS.white, fontWeight: '600' },
+    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    filterText: { fontSize: FONTS.sizes.sm, color: colors.textSecondary },
+    filterTextActive: { color: colors.white, fontWeight: '600' },
     listContent: { padding: SPACING.lg, paddingBottom: 100 },
-    taskCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
-    taskCardOverdue: { borderLeftWidth: 3, borderLeftColor: COLORS.error },
+    taskCard: { backgroundColor: colors.backgroundCard, borderRadius: RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
+    taskCardOverdue: { borderLeftWidth: 3, borderLeftColor: colors.error },
     taskHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.sm },
     priorityIndicator: { width: 4, height: 24, borderRadius: 2, marginRight: SPACING.sm },
     taskInfo: { flex: 1, marginRight: SPACING.sm },
-    taskTitle: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.text },
+    taskTitle: { fontSize: FONTS.sizes.md, fontWeight: '600', color: colors.text },
     projectRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 2 },
-    projectName: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
+    projectName: { fontSize: FONTS.sizes.xs, color: colors.textMuted },
     statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, borderRadius: RADIUS.full, gap: SPACING.xs },
     statusText: { fontSize: FONTS.sizes.xs, fontWeight: '600' },
-    taskDescription: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 18, marginBottom: SPACING.md },
-    taskFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: SPACING.md, borderTopWidth: 1, borderTopColor: COLORS.border },
+    taskDescription: { fontSize: FONTS.sizes.sm, color: colors.textSecondary, lineHeight: 18, marginBottom: SPACING.md },
+    taskFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: SPACING.md, borderTopWidth: 1, borderTopColor: colors.border },
     footerLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
     priorityBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.sm, gap: 2 },
     priorityText: { fontSize: FONTS.sizes.xs, fontWeight: '600' },
     assigneeRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-    assigneeName: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
+    assigneeName: { fontSize: FONTS.sizes.xs, color: colors.textMuted },
     dueDate: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
     dueDateOverdue: {},
-    dueDateText: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
-    dueDateTextOverdue: { color: COLORS.error, fontWeight: '600' },
+    dueDateText: { fontSize: FONTS.sizes.xs, color: colors.textMuted },
+    dueDateTextOverdue: { color: colors.error, fontWeight: '600' },
     emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.xxxl * 2 },
-    emptyTitle: { fontSize: FONTS.sizes.lg, fontWeight: '600', color: COLORS.text, marginTop: SPACING.lg, marginBottom: SPACING.sm },
-    emptyText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textAlign: 'center', marginBottom: SPACING.xl },
-    emptyButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primary, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md, gap: SPACING.sm },
-    emptyButtonText: { color: COLORS.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
-    fab: { position: 'absolute', bottom: SPACING.xl, right: SPACING.xl, width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOWS.lg },
+    emptyTitle: { fontSize: FONTS.sizes.lg, fontWeight: '600', color: colors.text, marginTop: SPACING.lg, marginBottom: SPACING.sm },
+    emptyText: { fontSize: FONTS.sizes.sm, color: colors.textSecondary, textAlign: 'center', marginBottom: SPACING.xl },
+    emptyButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md, borderRadius: RADIUS.md, gap: SPACING.sm },
+    emptyButtonText: { color: colors.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
+    fab: { position: 'absolute', bottom: SPACING.xl, right: SPACING.xl, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...SHADOWS.lg },
 });
 
 export default TaskScreen;

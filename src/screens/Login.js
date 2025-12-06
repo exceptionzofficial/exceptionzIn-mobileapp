@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -9,15 +9,18 @@ import {
     KeyboardAvoidingView,
     Platform,
     StatusBar,
-    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../context/AuthContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
+import { SPACING, RADIUS, SHADOWS, FONTS } from '../utils/theme';
 
 const LoginScreen = () => {
     const { login } = useAuth();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +47,10 @@ const LoginScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+            <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={colors.background}
+            />
             <KeyboardAvoidingView
                 style={styles.keyboardView}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -53,7 +59,7 @@ const LoginScreen = () => {
                     {/* Logo Section */}
                     <View style={styles.logoContainer}>
                         <View style={styles.logoBox}>
-                            <Icon name="briefcase-check" size={48} color={COLORS.primary} />
+                            <Icon name="briefcase-check" size={48} color={colors.primary} />
                         </View>
                         <Text style={styles.appTitle}>Exceptionz</Text>
                         <Text style={styles.appSubtitle}>Internal Team Portal</Text>
@@ -66,11 +72,11 @@ const LoginScreen = () => {
 
                         {/* Email Input */}
                         <View style={styles.inputContainer}>
-                            <Icon name="email-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+                            <Icon name="email-outline" size={20} color={colors.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="Email address"
-                                placeholderTextColor={COLORS.textMuted}
+                                placeholderTextColor={colors.textMuted}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -81,11 +87,11 @@ const LoginScreen = () => {
 
                         {/* Password Input */}
                         <View style={styles.inputContainer}>
-                            <Icon name="lock-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+                            <Icon name="lock-outline" size={20} color={colors.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 placeholder="Password"
-                                placeholderTextColor={COLORS.textMuted}
+                                placeholderTextColor={colors.textMuted}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
@@ -97,7 +103,7 @@ const LoginScreen = () => {
                                 <Icon
                                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                     size={20}
-                                    color={COLORS.textMuted}
+                                    color={colors.textMuted}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -113,7 +119,7 @@ const LoginScreen = () => {
                             ) : (
                                 <>
                                     <Text style={styles.loginButtonText}>Sign In</Text>
-                                    <Icon name="arrow-right" size={20} color={COLORS.white} />
+                                    <Icon name="arrow-right" size={20} color={colors.white} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -121,7 +127,7 @@ const LoginScreen = () => {
 
                     {/* Footer */}
                     <View style={styles.footer}>
-                        <Icon name="shield-check" size={16} color={COLORS.textMuted} />
+                        <Icon name="shield-check" size={16} color={colors.textMuted} />
                         <Text style={styles.footerText}>Secure login for team members only</Text>
                     </View>
                 </View>
@@ -130,10 +136,10 @@ const LoginScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     keyboardView: {
         flex: 1,
@@ -151,7 +157,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: RADIUS.xl,
-        backgroundColor: COLORS.primary + '15',
+        backgroundColor: colors.primary + '15',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: SPACING.lg,
@@ -159,39 +165,40 @@ const styles = StyleSheet.create({
     appTitle: {
         fontSize: FONTS.sizes.xxxl,
         fontWeight: '700',
-        color: COLORS.text,
+        color: colors.text,
         letterSpacing: 1,
     },
     appSubtitle: {
         fontSize: FONTS.sizes.md,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginTop: SPACING.xs,
     },
     formContainer: {
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.xl,
         padding: SPACING.xl,
         ...SHADOWS.lg,
+        shadowColor: colors.primary, // Add subtle glow based on primary color
     },
     welcomeText: {
         fontSize: FONTS.sizes.xxl,
         fontWeight: '700',
-        color: COLORS.text,
+        color: colors.text,
         marginBottom: SPACING.xs,
     },
     instructionText: {
         fontSize: FONTS.sizes.md,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginBottom: SPACING.xl,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.backgroundLight,
+        backgroundColor: colors.backgroundLight,
         borderRadius: RADIUS.md,
         marginBottom: SPACING.md,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     inputIcon: {
         paddingLeft: SPACING.lg,
@@ -200,13 +207,13 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: SPACING.lg,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
     },
     eyeButton: {
         padding: SPACING.lg,
     },
     loginButton: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         borderRadius: RADIUS.md,
         padding: SPACING.lg,
         flexDirection: 'row',
@@ -219,7 +226,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     loginButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
     },
@@ -232,7 +239,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
 });
 

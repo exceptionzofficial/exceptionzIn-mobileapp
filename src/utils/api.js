@@ -58,21 +58,30 @@ export const clearAuthData = async () => {
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
+    const url = `${BASE_URL}${endpoint}`;
+    console.log(`[API] Starting request to: ${url}`);
+
     const token = await getToken();
+    console.log(`[API] Token present: ${!!token}`);
 
     const headers = {
         'Content-Type': 'application/json',
+        // This header bypasses ngrok's browser warning page
+        'ngrok-skip-browser-warning': 'true',
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
     };
 
     try {
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        console.log(`[API] Fetching...`);
+        const response = await fetch(url, {
             ...options,
             headers,
         });
+        console.log(`[API] Response status: ${response.status}`);
 
         const data = await response.json();
+        console.log(`[API] Response data received`);
 
         if (!response.ok) {
             throw new Error(data.error || 'Request failed');
@@ -80,7 +89,9 @@ const apiRequest = async (endpoint, options = {}) => {
 
         return { success: true, data };
     } catch (error) {
-        console.error(`API Error [${endpoint}]:`, error.message);
+        console.error(`[API] Error [${endpoint}]:`, error);
+        console.error(`[API] Error type: ${error.name}`);
+        console.error(`[API] Error message: ${error.message}`);
         return { success: false, error: error.message };
     }
 };

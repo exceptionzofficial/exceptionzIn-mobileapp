@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 // Company Bank Details
 const BANK_DETAILS = {
@@ -31,10 +32,12 @@ const BANK_DETAILS = {
 
 const ProfileScreen = () => {
     const { user, logout, updateUserProfile } = useAuth();
+    const { colors, isDark, toggleTheme } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
+
     const [isEditing, setIsEditing] = useState(false);
     const [showBankDetails, setShowBankDetails] = useState(false);
     const [showQRCode, setShowQRCode] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const [editData, setEditData] = useState({
@@ -95,8 +98,6 @@ const ProfileScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Profile</Text>
@@ -104,7 +105,7 @@ const ProfileScreen = () => {
                     style={styles.editButton}
                     onPress={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
                 >
-                    <Icon name={isEditing ? 'check' : 'pencil'} size={20} color={COLORS.primary} />
+                    <Icon name={isEditing ? 'check' : 'pencil'} size={20} color={colors.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -122,7 +123,7 @@ const ProfileScreen = () => {
                             </View>
                         )}
                         <View style={styles.cameraIcon}>
-                            <Icon name="camera" size={14} color={COLORS.white} />
+                            <Icon name="camera" size={14} color={colors.white} />
                         </View>
                     </TouchableOpacity>
 
@@ -135,7 +136,7 @@ const ProfileScreen = () => {
                                     value={editData.name}
                                     onChangeText={(text) => setEditData(prev => ({ ...prev, name: text }))}
                                     placeholder="Enter your name"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                 />
                             </View>
                             <View style={styles.inputGroup}>
@@ -153,7 +154,7 @@ const ProfileScreen = () => {
                                     value={editData.phone}
                                     onChangeText={(text) => setEditData(prev => ({ ...prev, phone: text }))}
                                     placeholder="Enter phone number"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     keyboardType="phone-pad"
                                 />
                             </View>
@@ -164,7 +165,7 @@ const ProfileScreen = () => {
                                     value={editData.designation}
                                     onChangeText={(text) => setEditData(prev => ({ ...prev, designation: text }))}
                                     placeholder="Enter designation"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                 />
                             </View>
                         </View>
@@ -179,7 +180,7 @@ const ProfileScreen = () => {
                             )}
                             {user?.role === 'admin' && (
                                 <View style={styles.adminBadge}>
-                                    <Icon name="shield-check" size={12} color={COLORS.white} />
+                                    <Icon name="shield-check" size={12} color={colors.white} />
                                     <Text style={styles.adminText}>Admin</Text>
                                 </View>
                             )}
@@ -192,25 +193,25 @@ const ProfileScreen = () => {
                     <Text style={styles.sectionTitle}>Payment Options</Text>
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowQRCode(true)}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.primary + '15' }]}>
-                            <Icon name="qrcode" size={22} color={COLORS.primary} />
+                        <View style={[styles.menuIcon, { backgroundColor: colors.primary + '15' }]}>
+                            <Icon name="qrcode" size={22} color={colors.primary} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>Company QR Code</Text>
                             <Text style={styles.menuHint}>Scan to make payments</Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color={COLORS.textMuted} />
+                        <Icon name="chevron-right" size={20} color={colors.textMuted} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowBankDetails(true)}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.success + '15' }]}>
-                            <Icon name="bank" size={22} color={COLORS.success} />
+                        <View style={[styles.menuIcon, { backgroundColor: colors.success + '15' }]}>
+                            <Icon name="bank" size={22} color={colors.success} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>Bank Details</Text>
                             <Text style={styles.menuHint}>View account information</Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color={COLORS.textMuted} />
+                        <Icon name="chevron-right" size={20} color={colors.textMuted} />
                     </TouchableOpacity>
                 </View>
 
@@ -219,8 +220,8 @@ const ProfileScreen = () => {
                     <Text style={styles.sectionTitle}>Settings</Text>
 
                     <View style={styles.settingItem}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.warning + '15' }]}>
-                            <Icon name="bell-outline" size={22} color={COLORS.warning} />
+                        <View style={[styles.menuIcon, { backgroundColor: colors.warning + '15' }]}>
+                            <Icon name="bell-outline" size={22} color={colors.warning} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>Push Notifications</Text>
@@ -228,23 +229,23 @@ const ProfileScreen = () => {
                         <Switch
                             value={notificationsEnabled}
                             onValueChange={setNotificationsEnabled}
-                            trackColor={{ false: COLORS.border, true: COLORS.primary + '50' }}
-                            thumbColor={notificationsEnabled ? COLORS.primary : COLORS.textMuted}
+                            trackColor={{ false: colors.border, true: colors.primary + '50' }}
+                            thumbColor={notificationsEnabled ? colors.primary : colors.textMuted}
                         />
                     </View>
 
                     <View style={styles.settingItem}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.text + '15' }]}>
-                            <Icon name={isDarkMode ? 'weather-night' : 'white-balance-sunny'} size={22} color={COLORS.text} />
+                        <View style={[styles.menuIcon, { backgroundColor: colors.text + '15' }]}>
+                            <Icon name={isDark ? 'weather-night' : 'white-balance-sunny'} size={22} color={colors.text} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>Dark Mode</Text>
                         </View>
                         <Switch
-                            value={isDarkMode}
-                            onValueChange={setIsDarkMode}
-                            trackColor={{ false: COLORS.border, true: COLORS.primary + '50' }}
-                            thumbColor={isDarkMode ? COLORS.primary : COLORS.textMuted}
+                            value={isDark}
+                            onValueChange={toggleTheme}
+                            trackColor={{ false: colors.border, true: colors.primary + '50' }}
+                            thumbColor={isDark ? colors.primary : colors.textMuted}
                         />
                     </View>
                 </View>
@@ -254,31 +255,31 @@ const ProfileScreen = () => {
                     <Text style={styles.sectionTitle}>Support</Text>
 
                     <TouchableOpacity style={styles.menuItem}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.info + '15' }]}>
-                            <Icon name="help-circle-outline" size={22} color={COLORS.info} />
+                        <View style={[styles.menuIcon, { backgroundColor: colors.info + '15' }]}>
+                            <Icon name="help-circle-outline" size={22} color={colors.info} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>Help & Support</Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color={COLORS.textMuted} />
+                        <Icon name="chevron-right" size={20} color={colors.textMuted} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.menuItem}>
-                        <View style={[styles.menuIcon, { backgroundColor: COLORS.newLead + '15' }]}>
-                            <Icon name="information-outline" size={22} color={COLORS.newLead} />
+                        <View style={[styles.menuIcon, { backgroundColor: '#7C3AED15' }]}>
+                            <Icon name="information-outline" size={22} color={'#7C3AED'} />
                         </View>
                         <View style={styles.menuContent}>
                             <Text style={styles.menuLabel}>About App</Text>
                             <Text style={styles.menuHint}>Version 1.0.0</Text>
                         </View>
-                        <Icon name="chevron-right" size={20} color={COLORS.textMuted} />
+                        <Icon name="chevron-right" size={20} color={colors.textMuted} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Logout */}
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                    <Icon name="logout" size={20} color={COLORS.error} />
-                    <Text style={styles.logoutText}>Logout</Text>
+                    <Icon name="logout" size={20} color={colors.error} />
+                    <Text style={[styles.logoutText, { color: colors.error }]}>Logout</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
@@ -291,24 +292,24 @@ const ProfileScreen = () => {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Payment QR Code</Text>
                             <TouchableOpacity onPress={() => setShowQRCode(false)}>
-                                <Icon name="close" size={24} color={COLORS.textSecondary} />
+                                <Icon name="close" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.qrContainer}>
                             <View style={styles.qrPlaceholder}>
-                                <Icon name="qrcode" size={150} color={COLORS.text} />
+                                <Icon name="qrcode" size={150} color={colors.text} />
                             </View>
                             <Text style={styles.qrHint}>Scan this QR code to make payments</Text>
-                            <Text style={styles.upiId}>{BANK_DETAILS.upiId}</Text>
+                            <Text style={[styles.upiId, { color: colors.primary }]}>{BANK_DETAILS.upiId}</Text>
                         </View>
 
                         <TouchableOpacity
-                            style={styles.copyButton}
+                            style={[styles.copyButton, { backgroundColor: colors.primary }]}
                             onPress={() => copyToClipboard(BANK_DETAILS.upiId, 'UPI ID')}
                         >
-                            <Icon name="content-copy" size={18} color={COLORS.white} />
-                            <Text style={styles.copyButtonText}>Copy UPI ID</Text>
+                            <Icon name="content-copy" size={18} color={colors.white} />
+                            <Text style={[styles.copyButtonText, { color: colors.white }]}>Copy UPI ID</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -321,7 +322,7 @@ const ProfileScreen = () => {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Bank Details</Text>
                             <TouchableOpacity onPress={() => setShowBankDetails(false)}>
-                                <Icon name="close" size={24} color={COLORS.textSecondary} />
+                                <Icon name="close" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -333,7 +334,7 @@ const ProfileScreen = () => {
                                 <Text style={styles.bankLabel}>Account Name</Text>
                                 <View style={styles.bankValueRow}>
                                     <Text style={styles.bankValue}>{BANK_DETAILS.accountName}</Text>
-                                    <Icon name="content-copy" size={16} color={COLORS.textMuted} />
+                                    <Icon name="content-copy" size={16} color={colors.textMuted} />
                                 </View>
                             </TouchableOpacity>
 
@@ -344,7 +345,7 @@ const ProfileScreen = () => {
                                 <Text style={styles.bankLabel}>Account Number</Text>
                                 <View style={styles.bankValueRow}>
                                     <Text style={styles.bankValue}>{BANK_DETAILS.accountNumber}</Text>
-                                    <Icon name="content-copy" size={16} color={COLORS.textMuted} />
+                                    <Icon name="content-copy" size={16} color={colors.textMuted} />
                                 </View>
                             </TouchableOpacity>
 
@@ -355,7 +356,7 @@ const ProfileScreen = () => {
                                 <Text style={styles.bankLabel}>IFSC Code</Text>
                                 <View style={styles.bankValueRow}>
                                     <Text style={styles.bankValue}>{BANK_DETAILS.ifscCode}</Text>
-                                    <Icon name="content-copy" size={16} color={COLORS.textMuted} />
+                                    <Icon name="content-copy" size={16} color={colors.textMuted} />
                                 </View>
                             </TouchableOpacity>
 
@@ -376,7 +377,7 @@ const ProfileScreen = () => {
                                 <Text style={styles.bankLabel}>UPI ID</Text>
                                 <View style={styles.bankValueRow}>
                                     <Text style={styles.bankValue}>{BANK_DETAILS.upiId}</Text>
-                                    <Icon name="content-copy" size={16} color={COLORS.textMuted} />
+                                    <Icon name="content-copy" size={16} color={colors.textMuted} />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -389,100 +390,100 @@ const ProfileScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
+const getStyles = (colors) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: SPACING.md,
     },
-    headerTitle: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.text },
+    headerTitle: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: colors.text },
     editButton: {
-        width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white,
+        width: 40, height: 40, borderRadius: 20, backgroundColor: colors.backgroundCard,
         alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm,
     },
     content: { flex: 1, padding: SPACING.lg },
     profileCard: {
-        backgroundColor: COLORS.white, borderRadius: RADIUS.xl, padding: SPACING.xl,
+        backgroundColor: colors.backgroundCard, borderRadius: RADIUS.xl, padding: SPACING.xl,
         alignItems: 'center', marginBottom: SPACING.lg, ...SHADOWS.md,
     },
     avatarContainer: { position: 'relative', marginBottom: SPACING.lg },
     avatar: { width: 100, height: 100, borderRadius: 50 },
     avatarPlaceholder: {
-        width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.primary,
+        width: 100, height: 100, borderRadius: 50, backgroundColor: colors.primary,
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: FONTS.sizes.xxxl, fontWeight: '700', color: COLORS.white },
+    avatarText: { fontSize: FONTS.sizes.xxxl, fontWeight: '700', color: colors.white },
     cameraIcon: {
         position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16,
-        backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
-        borderWidth: 3, borderColor: COLORS.white,
+        backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+        borderWidth: 3, borderColor: colors.backgroundCard,
     },
     profileInfo: { alignItems: 'center' },
-    profileName: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.text },
-    profileEmail: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, marginTop: SPACING.xs },
+    profileName: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: colors.text },
+    profileEmail: { fontSize: FONTS.sizes.md, color: colors.textSecondary, marginTop: SPACING.xs },
     designationBadge: {
-        backgroundColor: COLORS.backgroundLight, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+        backgroundColor: colors.backgroundLight, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
         borderRadius: RADIUS.full, marginTop: SPACING.sm,
     },
-    designationText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+    designationText: { fontSize: FONTS.sizes.sm, color: colors.textSecondary },
     adminBadge: {
-        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primary,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary,
         paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.full,
         marginTop: SPACING.sm, gap: SPACING.xs,
     },
-    adminText: { fontSize: FONTS.sizes.xs, color: COLORS.white, fontWeight: '600' },
+    adminText: { fontSize: FONTS.sizes.xs, color: colors.white, fontWeight: '600' },
     editForm: { width: '100%' },
     inputGroup: { marginBottom: SPACING.md },
-    inputLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginBottom: SPACING.xs },
+    inputLabel: { fontSize: FONTS.sizes.sm, color: colors.textSecondary, marginBottom: SPACING.xs },
     input: {
-        backgroundColor: COLORS.backgroundLight, borderRadius: RADIUS.md, padding: SPACING.md,
-        fontSize: FONTS.sizes.md, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border,
+        backgroundColor: colors.backgroundLight, borderRadius: RADIUS.md, padding: SPACING.md,
+        fontSize: FONTS.sizes.md, color: colors.text, borderWidth: 1, borderColor: colors.border,
     },
-    inputDisabled: { backgroundColor: COLORS.backgroundDark, color: COLORS.textMuted },
+    inputDisabled: { backgroundColor: colors.backgroundDark, color: colors.textMuted },
     section: { marginBottom: SPACING.lg },
-    sectionTitle: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.text, marginBottom: SPACING.md },
+    sectionTitle: { fontSize: FONTS.sizes.md, fontWeight: '600', color: colors.text, marginBottom: SPACING.md },
     menuItem: {
-        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.lg, padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.sm,
     },
     settingItem: {
-        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+        flexDirection: 'row', alignItems: 'center', backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.lg, padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.sm,
     },
     menuIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     menuContent: { flex: 1, marginLeft: SPACING.md },
-    menuLabel: { fontSize: FONTS.sizes.md, fontWeight: '500', color: COLORS.text },
-    menuHint: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted, marginTop: 2 },
+    menuLabel: { fontSize: FONTS.sizes.md, fontWeight: '500', color: colors.text },
+    menuHint: { fontSize: FONTS.sizes.sm, color: colors.textMuted, marginTop: 2 },
     logoutButton: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.error + '10',
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.error + '10',
         borderRadius: RADIUS.lg, padding: SPACING.lg, gap: SPACING.sm,
     },
-    logoutText: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.error },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    logoutText: { fontSize: FONTS.sizes.md, fontWeight: '600', color: colors.error },
+    modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
     modalContent: {
-        backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
+        backgroundColor: colors.backgroundCard, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
         padding: SPACING.xl, paddingBottom: SPACING.xxxl,
     },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xl },
-    modalTitle: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.text },
+    modalTitle: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: colors.text },
     qrContainer: { alignItems: 'center', paddingVertical: SPACING.xl },
     qrPlaceholder: {
-        width: 200, height: 200, backgroundColor: COLORS.backgroundLight, borderRadius: RADIUS.lg,
+        width: 200, height: 200, backgroundColor: colors.backgroundLight, borderRadius: RADIUS.lg,
         alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
     },
-    qrHint: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginBottom: SPACING.sm },
-    upiId: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.primary },
+    qrHint: { fontSize: FONTS.sizes.sm, color: colors.textSecondary, marginBottom: SPACING.sm },
+    upiId: { fontSize: FONTS.sizes.md, fontWeight: '600', color: colors.primary },
     copyButton: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary,
         borderRadius: RADIUS.md, padding: SPACING.md, gap: SPACING.sm,
     },
-    copyButtonText: { color: COLORS.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
+    copyButtonText: { color: colors.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
     bankDetailsContainer: { marginBottom: SPACING.lg },
-    bankDetailRow: { paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-    bankLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted, marginBottom: SPACING.xs },
-    bankValue: { fontSize: FONTS.sizes.md, fontWeight: '500', color: COLORS.text },
+    bankDetailRow: { paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+    bankLabel: { fontSize: FONTS.sizes.sm, color: colors.textMuted, marginBottom: SPACING.xs },
+    bankValue: { fontSize: FONTS.sizes.md, fontWeight: '500', color: colors.text },
     bankValueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    copyHint: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted, textAlign: 'center' },
+    copyHint: { fontSize: FONTS.sizes.sm, color: colors.textMuted, textAlign: 'center' },
 });
 
 export default ProfileScreen;

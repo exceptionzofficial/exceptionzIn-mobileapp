@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -9,13 +9,13 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useData } from '../../context/DataContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const STATUS_OPTIONS = [
     { key: 'new_lead', label: 'New Lead', icon: 'star-outline' },
@@ -37,6 +37,8 @@ const SOURCE_OPTIONS = [
 const AddClientScreen = () => {
     const navigation = useNavigation();
     const { addClient } = useData();
+    const { colors } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -74,7 +76,6 @@ const AddClientScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
             <KeyboardAvoidingView
                 style={styles.flex}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -82,7 +83,7 @@ const AddClientScreen = () => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Icon name="arrow-left" size={24} color={COLORS.text} />
+                        <Icon name="arrow-left" size={24} color={colors.text} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Add Client</Text>
                     <View style={{ width: 40 }} />
@@ -100,11 +101,11 @@ const AddClientScreen = () => {
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Name *</Text>
                             <View style={styles.inputContainer}>
-                                <Icon name="account-outline" size={20} color={COLORS.textMuted} />
+                                <Icon name="account-outline" size={20} color={colors.textMuted} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Enter client name"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     value={formData.name}
                                     onChangeText={(value) => updateField('name', value)}
                                 />
@@ -114,11 +115,11 @@ const AddClientScreen = () => {
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Email</Text>
                             <View style={styles.inputContainer}>
-                                <Icon name="email-outline" size={20} color={COLORS.textMuted} />
+                                <Icon name="email-outline" size={20} color={colors.textMuted} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Enter email address"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     value={formData.email}
                                     onChangeText={(value) => updateField('email', value)}
                                     keyboardType="email-address"
@@ -130,11 +131,11 @@ const AddClientScreen = () => {
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Phone</Text>
                             <View style={styles.inputContainer}>
-                                <Icon name="phone-outline" size={20} color={COLORS.textMuted} />
+                                <Icon name="phone-outline" size={20} color={colors.textMuted} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Enter phone number"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     value={formData.phone}
                                     onChangeText={(value) => updateField('phone', value)}
                                     keyboardType="phone-pad"
@@ -145,11 +146,11 @@ const AddClientScreen = () => {
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Company</Text>
                             <View style={styles.inputContainer}>
-                                <Icon name="office-building-outline" size={20} color={COLORS.textMuted} />
+                                <Icon name="office-building-outline" size={20} color={colors.textMuted} />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Enter company name"
-                                    placeholderTextColor={COLORS.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     value={formData.company}
                                     onChangeText={(value) => updateField('company', value)}
                                 />
@@ -173,7 +174,7 @@ const AddClientScreen = () => {
                                     <Icon
                                         name={option.icon}
                                         size={18}
-                                        color={formData.status === option.key ? COLORS.white : COLORS.textSecondary}
+                                        color={formData.status === option.key ? colors.white : colors.textSecondary}
                                     />
                                     <Text style={[
                                         styles.optionText,
@@ -202,7 +203,7 @@ const AddClientScreen = () => {
                                     <Icon
                                         name={option.icon}
                                         size={16}
-                                        color={formData.source === option.key ? COLORS.white : COLORS.textSecondary}
+                                        color={formData.source === option.key ? colors.white : colors.textSecondary}
                                     />
                                     <Text style={[
                                         styles.sourceText,
@@ -221,7 +222,7 @@ const AddClientScreen = () => {
                         <TextInput
                             style={styles.textArea}
                             placeholder="Add notes about this client..."
-                            placeholderTextColor={COLORS.textMuted}
+                            placeholderTextColor={colors.textMuted}
                             value={formData.notes}
                             onChangeText={(value) => updateField('notes', value)}
                             multiline
@@ -236,7 +237,7 @@ const AddClientScreen = () => {
                         onPress={handleSubmit}
                         disabled={isLoading}
                     >
-                        <Icon name="check" size={20} color={COLORS.white} />
+                        <Icon name="check" size={20} color={colors.white} />
                         <Text style={styles.submitButtonText}>
                             {isLoading ? 'Adding...' : 'Add Client'}
                         </Text>
@@ -247,10 +248,10 @@ const AddClientScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     flex: {
         flex: 1,
@@ -262,9 +263,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.lg,
         paddingTop: SPACING.xl + 10,
         paddingBottom: SPACING.md,
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: colors.border,
     },
     backButton: {
         width: 40,
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     content: {
         flex: 1,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
         marginBottom: SPACING.md,
     },
     inputGroup: {
@@ -299,32 +300,32 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginBottom: SPACING.sm,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.md,
         paddingHorizontal: SPACING.md,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     input: {
         flex: 1,
         padding: SPACING.md,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
     },
     textArea: {
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.md,
         padding: SPACING.md,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         height: 120,
         textAlignVertical: 'top',
     },
@@ -336,24 +337,24 @@ const styles = StyleSheet.create({
     optionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.sm,
         borderRadius: RADIUS.md,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         gap: SPACING.xs,
     },
     optionButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     optionText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     optionTextActive: {
-        color: COLORS.white,
+        color: colors.white,
         fontWeight: '600',
     },
     optionsRow: {
@@ -364,31 +365,31 @@ const styles = StyleSheet.create({
     sourceButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.sm,
         borderRadius: RADIUS.full,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         gap: SPACING.xs,
     },
     sourceButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     sourceText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     sourceTextActive: {
-        color: COLORS.white,
+        color: colors.white,
         fontWeight: '600',
     },
     submitButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         borderRadius: RADIUS.md,
         padding: SPACING.lg,
         marginTop: SPACING.lg,
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     submitButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
     },

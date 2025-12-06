@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,21 +12,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useData } from '../../context/DataContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
-
-const STATUS_CONFIG = {
-    new_lead: { label: 'New Lead', color: COLORS.newLead, icon: 'star-outline' },
-    contacted: { label: 'Contacted', color: COLORS.contacted, icon: 'phone-outline' },
-    qualified: { label: 'Qualified', color: COLORS.qualified, icon: 'check-circle-outline' },
-    converted: { label: 'Converted', color: COLORS.converted, icon: 'check-decagram' },
-    lost: { label: 'Lost', color: COLORS.lost, icon: 'close-circle-outline' },
-};
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ClientScreen = () => {
     const navigation = useNavigation();
     const { clients } = useData();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+
+    const STATUS_CONFIG = {
+        new_lead: { label: 'New Lead', color: colors.info, icon: 'star-outline' },
+        contacted: { label: 'Contacted', color: colors.warning, icon: 'phone-outline' },
+        qualified: { label: 'Qualified', color: colors.success, icon: 'check-circle-outline' },
+        converted: { label: 'Converted', color: colors.primary, icon: 'check-decagram' },
+        lost: { label: 'Lost', color: colors.error, icon: 'close-circle-outline' },
+    };
 
     const filteredClients = clients.filter(client => {
         const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +72,7 @@ const ClientScreen = () => {
                     ]}
                     onPress={() => setFilterStatus(key)}
                 >
-                    <Icon name={value.icon} size={14} color={filterStatus === key ? COLORS.white : value.color} />
+                    <Icon name={value.icon} size={14} color={filterStatus === key ? colors.white : value.color} />
                     <Text style={[styles.filterText, filterStatus === key && styles.filterTextActive]}>
                         {stats[key]}
                     </Text>
@@ -109,13 +112,13 @@ const ClientScreen = () => {
                 <View style={styles.clientDetails}>
                     {item.email && (
                         <View style={styles.detailRow}>
-                            <Icon name="email-outline" size={14} color={COLORS.textMuted} />
+                            <Icon name="email-outline" size={14} color={colors.textMuted} />
                             <Text style={styles.detailText}>{item.email}</Text>
                         </View>
                     )}
                     {item.phone && (
                         <View style={styles.detailRow}>
-                            <Icon name="phone-outline" size={14} color={COLORS.textMuted} />
+                            <Icon name="phone-outline" size={14} color={colors.textMuted} />
                             <Text style={styles.detailText}>{item.phone}</Text>
                         </View>
                     )}
@@ -123,7 +126,7 @@ const ClientScreen = () => {
 
                 <View style={styles.clientFooter}>
                     <View style={styles.footerItem}>
-                        <Icon name="note-text-outline" size={14} color={COLORS.textMuted} />
+                        <Icon name="note-text-outline" size={14} color={colors.textMuted} />
                         <Text style={styles.footerText}>{item.notes?.length || 0} notes</Text>
                     </View>
                     <Text style={styles.dateText}>Added {formatDate(item.createdAt)}</Text>
@@ -134,14 +137,14 @@ const ClientScreen = () => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Icon name="account-group-outline" size={64} color={COLORS.textMuted} />
+            <Icon name="account-group-outline" size={64} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No Clients Yet</Text>
             <Text style={styles.emptyText}>Add your first client to start tracking leads</Text>
             <TouchableOpacity
                 style={styles.emptyButton}
                 onPress={() => navigation.navigate('AddClient')}
             >
-                <Icon name="plus" size={18} color={COLORS.white} />
+                <Icon name="plus" size={18} color={colors.white} />
                 <Text style={styles.emptyButtonText}>Add Client</Text>
             </TouchableOpacity>
         </View>
@@ -149,8 +152,6 @@ const ClientScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Clients</Text>
@@ -159,17 +160,17 @@ const ClientScreen = () => {
 
             {/* Search */}
             <View style={styles.searchContainer}>
-                <Icon name="magnify" size={20} color={COLORS.textMuted} />
+                <Icon name="magnify" size={20} color={colors.textMuted} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search clients..."
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                 />
                 {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Icon name="close-circle" size={18} color={COLORS.textMuted} />
+                        <Icon name="close-circle" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -192,16 +193,16 @@ const ClientScreen = () => {
                 style={styles.fab}
                 onPress={() => navigation.navigate('AddClient')}
             >
-                <Icon name="plus" size={24} color={COLORS.white} />
+                <Icon name="plus" size={24} color={colors.white} />
             </TouchableOpacity>
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
         paddingHorizontal: SPACING.xl,
@@ -211,29 +212,29 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: FONTS.sizes.xxl,
         fontWeight: '700',
-        color: COLORS.text,
+        color: colors.text,
     },
     headerSubtitle: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginTop: SPACING.xs,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         marginHorizontal: SPACING.lg,
         marginBottom: SPACING.md,
         paddingHorizontal: SPACING.md,
         borderRadius: RADIUS.lg,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     searchInput: {
         flex: 1,
         padding: SPACING.md,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
     },
     filterContainer: {
         flexDirection: 'row',
@@ -248,21 +249,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.sm,
         borderRadius: RADIUS.full,
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
         gap: SPACING.xs,
     },
     filterChipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     filterText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     filterTextActive: {
-        color: COLORS.white,
+        color: colors.white,
         fontWeight: '600',
     },
     listContent: {
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
         paddingBottom: 100,
     },
     clientCard: {
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.lg,
         padding: SPACING.lg,
         marginBottom: SPACING.md,
@@ -299,11 +300,11 @@ const styles = StyleSheet.create({
     clientName: {
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     clientCompany: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginTop: 2,
     },
     statusBadge: {
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
     },
     detailText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     clientFooter: {
         flexDirection: 'row',
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: SPACING.md,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: colors.border,
     },
     footerItem: {
         flexDirection: 'row',
@@ -346,11 +347,11 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     dateText: {
         fontSize: FONTS.sizes.xs,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     emptyContainer: {
         alignItems: 'center',
@@ -360,27 +361,27 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
         marginTop: SPACING.lg,
         marginBottom: SPACING.sm,
     },
     emptyText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         textAlign: 'center',
         marginBottom: SPACING.xl,
     },
     emptyButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         paddingHorizontal: SPACING.xl,
         paddingVertical: SPACING.md,
         borderRadius: RADIUS.md,
         gap: SPACING.sm,
     },
     emptyButtonText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
     },
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.lg,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,12 +12,15 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ChatScreen = () => {
     const navigation = useNavigation();
     const { user, getActiveUsers } = useAuth();
     const { getLastMessage, getUnreadCount } = useData();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
 
     const teamMembers = getActiveUsers().filter(u => u.id !== user?.id);
 
@@ -74,14 +77,14 @@ const ChatScreen = () => {
                     </View>
                 </View>
 
-                <Icon name="chevron-right" size={20} color={COLORS.textMuted} />
+                <Icon name="chevron-right" size={20} color={colors.textMuted} />
             </TouchableOpacity>
         );
     };
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Icon name="chat-outline" size={64} color={COLORS.textMuted} />
+            <Icon name="chat-outline" size={64} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No Team Members</Text>
             <Text style={styles.emptyText}>
                 Team members will appear here once added by admin
@@ -91,8 +94,6 @@ const ChatScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Messages</Text>
@@ -112,10 +113,10 @@ const ChatScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
         paddingHorizontal: SPACING.xl,
@@ -125,11 +126,11 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: FONTS.sizes.xxl,
         fontWeight: '700',
-        color: COLORS.text,
+        color: colors.text,
     },
     headerSubtitle: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         marginTop: SPACING.xs,
     },
     listContent: {
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     memberCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderRadius: RADIUS.lg,
         padding: SPACING.lg,
         marginBottom: SPACING.md,
@@ -151,12 +152,12 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
     avatarText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
     },
@@ -167,9 +168,9 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: COLORS.success,
+        backgroundColor: colors.success,
         borderWidth: 2,
-        borderColor: COLORS.white,
+        borderColor: colors.backgroundCard,
     },
     memberInfo: {
         flex: 1,
@@ -184,11 +185,11 @@ const styles = StyleSheet.create({
     memberName: {
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     timeText: {
         fontSize: FONTS.sizes.xs,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     messageRow: {
         flexDirection: 'row',
@@ -197,10 +198,10 @@ const styles = StyleSheet.create({
     lastMessage: {
         flex: 1,
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
     },
     unreadBadge: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         borderRadius: 10,
         minWidth: 20,
         height: 20,
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
         marginLeft: SPACING.sm,
     },
     unreadText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.xs,
         fontWeight: '600',
     },
@@ -222,13 +223,13 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: FONTS.sizes.lg,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
         marginTop: SPACING.lg,
         marginBottom: SPACING.sm,
     },
     emptyText: {
         fontSize: FONTS.sizes.sm,
-        color: COLORS.textSecondary,
+        color: colors.textSecondary,
         textAlign: 'center',
     },
 });

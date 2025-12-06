@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -15,7 +15,8 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ChatRoomScreen = () => {
     const route = useRoute();
@@ -23,6 +24,8 @@ const ChatRoomScreen = () => {
     const { userId, userName } = route.params;
     const { user } = useAuth();
     const { getConversation, sendMessage, markMessagesAsRead } = useData();
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => getStyles(colors), [colors]);
 
     const [messageText, setMessageText] = useState('');
     const flatListRef = useRef(null);
@@ -90,7 +93,7 @@ const ChatRoomScreen = () => {
                                 <Icon
                                     name="check-all"
                                     size={14}
-                                    color={item.read ? COLORS.primary : COLORS.white}
+                                    color={item.read ? colors.primary : 'rgba(255,255,255,0.7)'}
                                     style={styles.checkIcon}
                                 />
                             )}
@@ -103,15 +106,13 @@ const ChatRoomScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Icon name="arrow-left" size={24} color={COLORS.text} />
+                    <Icon name="arrow-left" size={24} color={colors.text} />
                 </TouchableOpacity>
 
                 <View style={styles.headerInfo}>
@@ -127,7 +128,7 @@ const ChatRoomScreen = () => {
                 </View>
 
                 <TouchableOpacity style={styles.headerAction}>
-                    <Icon name="dots-vertical" size={24} color={COLORS.textSecondary} />
+                    <Icon name="dots-vertical" size={24} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
 
@@ -142,7 +143,7 @@ const ChatRoomScreen = () => {
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Icon name="chat-processing-outline" size={48} color={COLORS.textMuted} />
+                        <Icon name="chat-processing-outline" size={48} color={colors.textMuted} />
                         <Text style={styles.emptyText}>Start a conversation</Text>
                     </View>
                 }
@@ -157,7 +158,7 @@ const ChatRoomScreen = () => {
                         <TextInput
                             style={styles.input}
                             placeholder="Type a message..."
-                            placeholderTextColor={COLORS.textMuted}
+                            placeholderTextColor={colors.textMuted}
                             value={messageText}
                             onChangeText={setMessageText}
                             multiline
@@ -169,7 +170,7 @@ const ChatRoomScreen = () => {
                         onPress={handleSend}
                         disabled={!messageText.trim()}
                     >
-                        <Icon name="send" size={20} color={COLORS.white} />
+                        <Icon name="send" size={20} color={colors.white} />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -177,10 +178,10 @@ const ChatRoomScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
     },
     header: {
         flexDirection: 'row',
@@ -188,9 +189,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.md,
         paddingTop: SPACING.xl + 10,
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: colors.border,
         ...SHADOWS.sm,
     },
     backButton: {
@@ -210,24 +211,24 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.md,
     },
     headerAvatarText: {
-        color: COLORS.white,
+        color: colors.white,
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
     },
     headerName: {
         fontSize: FONTS.sizes.md,
         fontWeight: '600',
-        color: COLORS.text,
+        color: colors.text,
     },
     headerStatus: {
         fontSize: FONTS.sizes.xs,
-        color: COLORS.success,
+        color: colors.success,
     },
     headerAction: {
         width: 40,
@@ -246,8 +247,8 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: FONTS.sizes.xs,
-        color: COLORS.textMuted,
-        backgroundColor: COLORS.backgroundLight,
+        color: colors.textMuted,
+        backgroundColor: colors.backgroundLight,
         paddingHorizontal: SPACING.md,
         paddingVertical: SPACING.xs,
         borderRadius: RADIUS.full,
@@ -266,21 +267,21 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.lg,
     },
     otherBubble: {
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderTopLeftRadius: RADIUS.sm,
         ...SHADOWS.sm,
     },
     ownBubble: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         borderTopRightRadius: RADIUS.sm,
     },
     messageText: {
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
         lineHeight: 20,
     },
     ownMessageText: {
-        color: COLORS.white,
+        color: colors.white,
     },
     messageFooter: {
         flexDirection: 'row',
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
     },
     timeText: {
         fontSize: FONTS.sizes.xs,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
     },
     ownTimeText: {
         color: 'rgba(255,255,255,0.7)',
@@ -306,41 +307,41 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: FONTS.sizes.md,
-        color: COLORS.textMuted,
+        color: colors.textMuted,
         marginTop: SPACING.md,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'flex-end',
         padding: SPACING.md,
-        backgroundColor: COLORS.white,
+        backgroundColor: colors.backgroundCard,
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        borderTopColor: colors.border,
     },
     inputWrapper: {
         flex: 1,
-        backgroundColor: COLORS.backgroundLight,
+        backgroundColor: colors.backgroundLight,
         borderRadius: RADIUS.lg,
         marginRight: SPACING.sm,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: colors.border,
     },
     input: {
         padding: SPACING.md,
         fontSize: FONTS.sizes.md,
-        color: COLORS.text,
+        color: colors.text,
         maxHeight: 100,
     },
     sendButton: {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
     sendButtonDisabled: {
-        backgroundColor: COLORS.textMuted,
+        backgroundColor: colors.textMuted,
     },
 });
 
