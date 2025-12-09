@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import DatePicker from 'react-native-date-picker';
 import {
     View,
     Text,
@@ -47,7 +48,26 @@ const ProjectDetailScreen = () => {
 
     const [activeTab, setActiveTab] = useState('Overview');
     const [showStatusPicker, setShowStatusPicker] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        description: '',
+        totalAmount: '',
+        paidAmount: '',
+        dueDate: new Date(),
+    });
+    const [openDatePicker, setOpenDatePicker] = useState(false);
     const [newModule, setNewModule] = useState({ name: '', assignedTo: null, assignedToName: null, estimatedDays: '' });
+
+    useEffect(() => {
+        if (project) {
+            setEditForm({
+                description: project.description || '',
+                totalAmount: project.financials?.totalAmount?.toString() || '0',
+                paidAmount: project.financials?.paidAmount?.toString() || '0',
+                dueDate: (project.financials?.dueDate && !isNaN(new Date(project.financials.dueDate).getTime())) ? new Date(project.financials.dueDate) : new Date(),
+            });
+        }
+    }, [project]);
 
     if (!project) {
         return (
@@ -76,6 +96,29 @@ const ProjectDetailScreen = () => {
 
     const handleModuleStatusChange = async (moduleId, newStatus) => {
         await updateProjectModule(projectId, moduleId, { status: newStatus });
+    };
+
+    const handleSave = async () => {
+        const total = parseFloat(editForm.totalAmount) || 0;
+        const paid = parseFloat(editForm.paidAmount) || 0;
+
+        const updates = {
+            description: editForm.description,
+            financials: {
+                totalAmount: total,
+                paidAmount: paid, // Allow manual override or auto-calc? Let's assume manual
+                dueAmount: total - paid,
+                dueDate: editForm.dueDate,
+            }
+        };
+
+        const result = await updateProject(projectId, updates);
+        if (result.success) {
+            setIsEditing(false);
+            Alert.alert('Success', 'Project details updated successfully');
+        } else {
+            Alert.alert('Error', result.error);
+        }
     };
 
     const handleAddModule = async () => {
@@ -108,7 +151,17 @@ const ProjectDetailScreen = () => {
                     <Icon name="file-document-outline" size={20} color={colors.primary} />
                     <Text style={styles.scopeTitle}>Project Scope</Text>
                 </View>
-                <Text style={styles.scopeText}>{project.description || 'No project scope defined yet.'}</Text>
+                {isEditing ? (
+                    <TextInput
+                        style={styles.editInputMultiline}
+                        value={editForm.description}
+                        onChangeText={(text) => setEditForm(prev => ({ ...prev, description: text }))}
+                        multiline
+                        textAlignVertical="top"
+                    />
+                ) : (
+                    <Text style={styles.scopeText}>{project.description || 'No project scope defined yet.'}</Text>
+                )}
             </View>
 
             <View style={styles.activityCard}>
@@ -234,12 +287,30 @@ const ProjectDetailScreen = () => {
                     <View style={[styles.financialCard, { backgroundColor: colors.primary + '10' }]}>
                         <Icon name="cash" size={24} color={colors.primary} />
                         <Text style={styles.financialLabel}>Total Amount</Text>
-                        <Text style={[styles.financialValue, { color: colors.primary }]}>{formatCurrency(financials.totalAmount)}</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={[styles.editInput, { color: colors.primary }]}
+                                value={editForm.totalAmount}
+                                onChangeText={(text) => setEditForm(prev => ({ ...prev, totalAmount: text }))}
+                                keyboardType="numeric"
+                            />
+                        ) : (
+                            <Text style={[styles.financialValue, { color: colors.primary }]}>{formatCurrency(financials.totalAmount)}</Text>
+                        )}
                     </View>
                     <View style={[styles.financialCard, { backgroundColor: colors.success + '10' }]}>
                         <Icon name="check-circle" size={24} color={colors.success} />
                         <Text style={styles.financialLabel}>Paid Amount</Text>
-                        <Text style={[styles.financialValue, { color: colors.success }]}>{formatCurrency(financials.paidAmount)}</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={[styles.editInput, { color: colors.success }]}
+                                value={editForm.paidAmount}
+                                onChangeText={(text) => setEditForm(prev => ({ ...prev, paidAmount: text }))}
+                                keyboardType="numeric"
+                            />
+                        ) : (
+                            <Text style={[styles.financialValue, { color: colors.success }]}>{formatCurrency(financials.paidAmount)}</Text>
+                        )}
                     </View>
                 </View>
                 <View style={styles.financialCards}>
@@ -248,11 +319,35 @@ const ProjectDetailScreen = () => {
                         <Text style={styles.financialLabel}>Due Amount</Text>
                         <Text style={[styles.financialValue, { color: colors.error }]}>{formatCurrency(dueAmount)}</Text>
                     </View>
-                    <View style={[styles.financialCard, { backgroundColor: colors.warning + '10' }]}>
+                    <TouchableOpacity
+                        style={[styles.financialCard, { backgroundColor: colors.warning + '10' }]}
+                        onPress={() => isEditing && setOpenDatePicker(true)}
+                        disabled={!isEditing}
+                    >
                         <Icon name="calendar-clock" size={24} color={colors.warning} />
                         <Text style={styles.financialLabel}>Due Date</Text>
-                        <Text style={[styles.financialValue, { color: colors.warning }]}>{formatDate(financials.dueDate)}</Text>
-                    </View>
+                        {isEditing ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                                <Text style={[styles.financialValue, { color: colors.warning }]}>{editForm.dueDate?.toLocaleDateString()}</Text>
+                                <Icon name="pencil" size={14} color={colors.warning} />
+                            </View>
+                        ) : (
+                            <Text style={[styles.financialValue, { color: colors.warning }]}>{formatDate(financials.dueDate)}</Text>
+                        )}
+                    </TouchableOpacity>
+                    <DatePicker
+                        modal
+                        open={openDatePicker}
+                        date={editForm.dueDate}
+                        mode="date"
+                        onConfirm={(date) => {
+                            setOpenDatePicker(false);
+                            setEditForm(prev => ({ ...prev, dueDate: date }));
+                        }}
+                        onCancel={() => {
+                            setOpenDatePicker(false);
+                        }}
+                    />
                 </View>
                 <View style={styles.paymentProgress}>
                     <View style={styles.paymentProgressHeader}>
@@ -312,10 +407,21 @@ const ProjectDetailScreen = () => {
                     <Icon name="arrow-left" size={20} color={colors.primary} />
                     <Text style={styles.backText}>Back to Projects</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.editButton} onPress={() => setShowStatusPicker(!showStatusPicker)}>
-                    <Icon name="pencil" size={16} color={colors.primary} />
-                    <Text style={styles.editButtonText}>Edit Project</Text>
-                </TouchableOpacity>
+                {isEditing ? (
+                    <View style={{ flexDirection: 'row', gap: SPACING.md }}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.saveButtonText}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+                        <Icon name="pencil" size={16} color={colors.primary} />
+                        <Text style={styles.editButtonText}>Edit Project</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -463,6 +569,12 @@ const getStyles = (colors, isDark) => StyleSheet.create({
     emptyStateText: { fontSize: FONTS.sizes.md, color: colors.textMuted, marginTop: SPACING.md },
     uploadButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, borderRadius: RADIUS.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, marginTop: SPACING.lg, gap: SPACING.sm },
     uploadButtonText: { color: colors.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
+    editInputMultiline: { backgroundColor: colors.backgroundLight, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: colors.border, minHeight: 100, fontSize: FONTS.sizes.sm, color: colors.text },
+    editInput: { backgroundColor: colors.backgroundLight, borderRadius: RADIUS.sm, padding: SPACING.xs, borderWidth: 1, borderColor: colors.border, minWidth: 80, textAlign: 'center', fontSize: FONTS.sizes.lg, fontWeight: '700' },
+    cancelButton: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },
+    cancelButtonText: { fontSize: FONTS.sizes.sm, color: colors.textMuted },
+    saveButton: { backgroundColor: colors.primary, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderRadius: RADIUS.md },
+    saveButtonText: { fontSize: FONTS.sizes.sm, color: colors.white, fontWeight: '600' },
 });
 
 export default ProjectDetailScreen;

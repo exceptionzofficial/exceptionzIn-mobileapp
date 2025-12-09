@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import DatePicker from 'react-native-date-picker';
 import {
     View,
     Text,
@@ -48,7 +49,9 @@ const AddClientScreen = () => {
         status: 'new_lead',
         source: 'direct',
         notes: '',
+        followUpDate: new Date(),
     });
+    const [openDatePicker, setOpenDatePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const updateField = (field, value) => {
@@ -155,6 +158,32 @@ const AddClientScreen = () => {
                                     onChangeText={(value) => updateField('company', value)}
                                 />
                             </View>
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Follow Up Date</Text>
+                            <TouchableOpacity
+                                style={styles.inputContainer}
+                                onPress={() => setOpenDatePicker(true)}
+                            >
+                                <Icon name="calendar" size={20} color={colors.textMuted} />
+                                <Text style={[styles.input, { paddingVertical: SPACING.md }]}>
+                                    {formData.followUpDate.toLocaleDateString()}
+                                </Text>
+                            </TouchableOpacity>
+                            <DatePicker
+                                modal
+                                open={openDatePicker}
+                                date={formData.followUpDate}
+                                mode="date"
+                                onConfirm={(date) => {
+                                    setOpenDatePicker(false);
+                                    updateField('followUpDate', date);
+                                }}
+                                onCancel={() => {
+                                    setOpenDatePicker(false);
+                                }}
+                            />
                         </View>
                     </View>
 

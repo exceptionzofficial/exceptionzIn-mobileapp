@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import DatePicker from 'react-native-date-picker';
 import {
     View,
     Text,
@@ -42,8 +43,27 @@ const ClientDetailScreen = () => {
     const [paymentData, setPaymentData] = useState({
         totalAmount: '',
         paidAmount: '',
-        dueDate: '',
+        dueDate: new Date(),
     });
+    const [openConversionDatePicker, setOpenConversionDatePicker] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+    });
+
+    useEffect(() => {
+        if (client) {
+            setEditForm({
+                name: client.name || '',
+                email: client.email || '',
+                phone: client.phone || '',
+                company: client.company || '',
+            });
+        }
+    }, [client]);
 
     if (!client) {
         return (
@@ -90,10 +110,10 @@ const ClientDetailScreen = () => {
             totalAmount: total,
             paidAmount: paid,
             dueAmount: total - paid,
-            dueDate: paymentData.dueDate || null,
+            dueDate: paymentData.dueDate,
         });
         setShowPaymentModal(false);
-        setPaymentData({ totalAmount: '', paidAmount: '', dueDate: '' });
+        setPaymentData({ totalAmount: '', paidAmount: '', dueDate: new Date() });
         if (result.success) {
             Alert.alert('Project Created', `Project "${client.name}" has been created successfully!`, [
                 { text: 'View Projects', onPress: () => navigation.navigate('Projects') },
@@ -114,6 +134,17 @@ const ClientDetailScreen = () => {
                 },
             },
         ]);
+
+    };
+
+    const handleSave = async () => {
+        const result = await updateClient(clientId, editForm);
+        if (result.success) {
+            setIsEditing(false);
+            Alert.alert('Success', 'Client details updated');
+        } else {
+            Alert.alert('Error', result.error);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -144,12 +175,30 @@ const ClientDetailScreen = () => {
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Client Details</Text>
-                {isAdmin && (
-                    <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                        <Icon name="trash-can-outline" size={22} color={colors.error} />
-                    </TouchableOpacity>
-                )}
+                <Text style={styles.headerTitle}>{isEditing ? 'Edit Client' : 'Client Details'}</Text>
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                    {isEditing ? (
+                        <>
+                            <TouchableOpacity style={styles.headerButton} onPress={() => setIsEditing(false)}>
+                                <Icon name="close" size={24} color={colors.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.headerButton} onPress={handleSave}>
+                                <Icon name="check" size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <>
+                            <TouchableOpacity style={styles.headerButton} onPress={() => setIsEditing(true)}>
+                                <Icon name="pencil" size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                            {isAdmin && (
+                                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                                    <Icon name="trash-can-outline" size={22} color={colors.error} />
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
+                </View>
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -161,8 +210,28 @@ const ClientDetailScreen = () => {
                             </Text>
                         </View>
                         <View style={styles.infoDetails}>
-                            <Text style={styles.clientName}>{client.name}</Text>
-                            {client.company && <Text style={styles.clientCompany}>{client.company}</Text>}
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.editNameInput}
+                                    value={editForm.name}
+                                    onChangeText={(text) => setEditForm(prev => ({ ...prev, name: text }))}
+                                    placeholder="Name"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            ) : (
+                                <Text style={styles.clientName}>{client.name}</Text>
+                            )}
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.editCompanyInput}
+                                    value={editForm.company}
+                                    onChangeText={(text) => setEditForm(prev => ({ ...prev, company: text }))}
+                                    placeholder="Company"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            ) : (
+                                client.company && <Text style={styles.clientCompany}>{client.company}</Text>
+                            )}
                         </View>
                     </View>
 
@@ -193,18 +262,36 @@ const ClientDetailScreen = () => {
                     )}
 
                     <View style={styles.contactSection}>
-                        {client.email && (
-                            <View style={styles.contactRow}>
-                                <Icon name="email-outline" size={18} color={colors.textMuted} />
-                                <Text style={styles.contactText}>{client.email}</Text>
-                            </View>
-                        )}
-                        {client.phone && (
-                            <View style={styles.contactRow}>
-                                <Icon name="phone-outline" size={18} color={colors.textMuted} />
-                                <Text style={styles.contactText}>{client.phone}</Text>
-                            </View>
-                        )}
+                        <View style={styles.contactRow}>
+                            <Icon name="email-outline" size={18} color={colors.textMuted} />
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.editContactInput}
+                                    value={editForm.email}
+                                    onChangeText={(text) => setEditForm(prev => ({ ...prev, email: text }))}
+                                    placeholder="Email"
+                                    placeholderTextColor={colors.textMuted}
+                                    autoCapitalize="none"
+                                />
+                            ) : (
+                                <Text style={styles.contactText}>{client.email || 'No email'}</Text>
+                            )}
+                        </View>
+                        <View style={styles.contactRow}>
+                            <Icon name="phone-outline" size={18} color={colors.textMuted} />
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.editContactInput}
+                                    value={editForm.phone}
+                                    onChangeText={(text) => setEditForm(prev => ({ ...prev, phone: text }))}
+                                    placeholder="Phone"
+                                    placeholderTextColor={colors.textMuted}
+                                    keyboardType="phone-pad"
+                                />
+                            ) : (
+                                <Text style={styles.contactText}>{client.phone || 'No phone'}</Text>
+                            )}
+                        </View>
                         <View style={styles.contactRow}>
                             <Icon name="calendar-outline" size={18} color={colors.textMuted} />
                             <Text style={styles.contactText}>Added {formatDate(client.createdAt).split(',')[0]}</Text>
@@ -269,7 +356,26 @@ const ClientDetailScreen = () => {
                             </View>
                             <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>Due Date (Optional)</Text>
-                                <TextInput style={styles.modalInput} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} value={paymentData.dueDate} onChangeText={(text) => setPaymentData(prev => ({ ...prev, dueDate: text }))} />
+                                <TouchableOpacity onPress={() => setOpenConversionDatePicker(true)}>
+                                    <View style={[styles.modalInput, { justifyContent: 'center' }]}>
+                                        <Text style={{ color: colors.text }}>
+                                            {paymentData.dueDate ? paymentData.dueDate.toLocaleDateString() : 'Select Date'}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <DatePicker
+                                    modal
+                                    open={openConversionDatePicker}
+                                    date={paymentData.dueDate || new Date()}
+                                    mode="date"
+                                    onConfirm={(date) => {
+                                        setOpenConversionDatePicker(false);
+                                        setPaymentData(prev => ({ ...prev, dueDate: date }));
+                                    }}
+                                    onCancel={() => {
+                                        setOpenConversionDatePicker(false);
+                                    }}
+                                />
                             </View>
                         </View>
                         <TouchableOpacity style={styles.convertButton} onPress={handleConvertWithPayment}>
@@ -338,6 +444,10 @@ const getStyles = (colors) => StyleSheet.create({
     dueValue: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: colors.success },
     convertButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, borderRadius: RADIUS.md, padding: SPACING.lg, marginTop: SPACING.lg, gap: SPACING.sm },
     convertButtonText: { color: colors.white, fontSize: FONTS.sizes.md, fontWeight: '600' },
+    headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: colors.backgroundLight },
+    editNameInput: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: colors.text, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 2, marginBottom: 4 },
+    editCompanyInput: { fontSize: FONTS.sizes.md, color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 2 },
+    editContactInput: { fontSize: FONTS.sizes.md, color: colors.text, flex: 1, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 2 },
 });
 
 export default ClientDetailScreen;

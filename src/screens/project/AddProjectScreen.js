@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import DatePicker from 'react-native-date-picker';
 import {
     View,
     Text,
@@ -32,9 +33,10 @@ const AddProjectScreen = () => {
         clientId: null,
         clientName: '',
         status: 'planning',
-        dueDate: '',
+        dueDate: new Date(),
         modules: [],
     });
+    const [openDatePicker, setOpenDatePicker] = useState(false);
     const [showClientPicker, setShowClientPicker] = useState(false);
     const [newModuleName, setNewModuleName] = useState('');
 
@@ -140,12 +142,27 @@ const AddProjectScreen = () => {
 
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Due Date</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="YYYY-MM-DD"
-                            placeholderTextColor={colors.textMuted}
-                            value={formData.dueDate}
-                            onChangeText={(text) => handleInputChange('dueDate', text)}
+                        <TouchableOpacity
+                            style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                            onPress={() => setOpenDatePicker(true)}
+                        >
+                            <Text style={{ color: colors.text, fontSize: FONTS.sizes.md }}>
+                                {formData.dueDate.toLocaleDateString()}
+                            </Text>
+                            <Icon name="calendar" size={20} color={colors.textMuted} />
+                        </TouchableOpacity>
+                        <DatePicker
+                            modal
+                            open={openDatePicker}
+                            date={formData.dueDate}
+                            mode="date"
+                            onConfirm={(date) => {
+                                setOpenDatePicker(false);
+                                handleInputChange('dueDate', date);
+                            }}
+                            onCancel={() => {
+                                setOpenDatePicker(false);
+                            }}
                         />
                     </View>
 

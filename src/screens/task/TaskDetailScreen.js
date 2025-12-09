@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import DatePicker from 'react-native-date-picker';
 import {
     View,
     Text,
@@ -30,6 +31,25 @@ const TaskDetailScreen = () => {
     const project = task?.projectId ? getProjectById(task.projectId) : null;
     const [newComment, setNewComment] = useState('');
     const [showStatusPicker, setShowStatusPicker] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        title: '',
+        description: '',
+        dueDate: new Date(),
+        priority: 'medium',
+    });
+    const [openDatePicker, setOpenDatePicker] = useState(false);
+
+    useEffect(() => {
+        if (task) {
+            setEditForm({
+                title: task.title || '',
+                description: task.description || '',
+                dueDate: (task.dueDate && !isNaN(new Date(task.dueDate).getTime())) ? new Date(task.dueDate) : new Date(),
+                priority: task.priority || 'medium',
+            });
+        }
+    }, [task]);
 
     const STATUS_CONFIG = {
         pending: { label: 'Pending', color: colors.textMuted, icon: 'clock-outline' },
@@ -73,6 +93,22 @@ const TaskDetailScreen = () => {
         setShowStatusPicker(false);
     };
 
+    const handleSave = async () => {
+        const updates = {
+            title: editForm.title,
+            description: editForm.description,
+            dueDate: editForm.dueDate,
+            priority: editForm.priority,
+        };
+        const result = await updateTask(taskId, updates);
+        if (result.success) {
+            setIsEditing(false);
+            Alert.alert('Success', 'Task details updated');
+        } else {
+            Alert.alert('Error', result.error);
+        }
+    };
+
     const handleDelete = () => {
         Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
             { text: 'Cancel', style: 'cancel' },
@@ -114,17 +150,45 @@ const TaskDetailScreen = () => {
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Task Details</Text>
-                {isAdmin && (
-                    <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                        <Icon name="trash-can-outline" size={22} color={colors.error} />
-                    </TouchableOpacity>
-                )}
+                <Text style={styles.headerTitle}>{isEditing ? 'Edit Task' : 'Task Details'}</Text>
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                    {isEditing ? (
+                        <>
+                            <TouchableOpacity style={styles.headerButton} onPress={() => setIsEditing(false)}>
+                                <Icon name="close" size={24} color={colors.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.headerButton} onPress={handleSave}>
+                                <Icon name="check" size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <>
+                            <TouchableOpacity style={styles.headerButton} onPress={() => setIsEditing(true)}>
+                                <Icon name="pencil" size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                            {isAdmin && (
+                                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                                    <Icon name="trash-can-outline" size={22} color={colors.error} />
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
+                </View>
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={[styles.taskCard, isOverdue && styles.taskCardOverdue]}>
-                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    {isEditing ? (
+                        <TextInput
+                            style={styles.editTitleInput}
+                            value={editForm.title}
+                            onChangeText={(text) => setEditForm(prev => ({ ...prev, title: text }))}
+                            placeholder="Task Title"
+                            placeholderTextColor={colors.textMuted}
+                        />
+                    ) : (
+                        <Text style={styles.taskTitle}>{task.title}</Text>
+                    )}
 
                     {project && (
                         <TouchableOpacity style={styles.projectLink} onPress={() => navigation.navigate('ProjectDetail', { projectId: project.id })}>
@@ -133,12 +197,12 @@ const TaskDetailScreen = () => {
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity style={styles.statusSection} onPress={() => setShowStatusPicker(!showStatusPicker)}>
+                    <TouchableOpacity style={styles.statusSection} onPress={() => setShowStatusPicker(!showStatusPicker)} disabled={isEditing}>
                         <View style={[styles.statusBadge, { backgroundColor: statusConfig.color + '15' }]}>
                             <Icon name={statusConfig.icon} size={16} color={statusConfig.color} />
                             <Text style={[styles.statusText, { color: statusConfig.color }]}>{statusConfig.label}</Text>
                         </View>
-                        <Icon name="chevron-down" size={20} color={colors.textMuted} />
+                        {!isEditing && <Icon name="chevron-down" size={20} color={colors.textMuted} />}
                     </TouchableOpacity>
 
                     {showStatusPicker && (
@@ -165,21 +229,69 @@ const TaskDetailScreen = () => {
                         <View style={styles.detailRow}>
                             <Icon name="calendar-outline" size={18} color={isOverdue ? colors.error : colors.textMuted} />
                             <Text style={styles.detailLabel}>Due date:</Text>
-                            <Text style={[styles.detailValue, isOverdue && { color: colors.error }]}>{formatDate(task.dueDate)}</Text>
+                            {isEditing ? (
+                                <TouchableOpacity onPress={() => setOpenDatePicker(true)}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                                        <Text style={[styles.detailValue, { color: colors.primary }]}>{editForm.dueDate.toLocaleDateString()}</Text>
+                                        <Icon name="pencil" size={14} color={colors.primary} />
+                                    </View>
+                                </TouchableOpacity>
+                            ) : (
+                                <Text style={[styles.detailValue, isOverdue && { color: colors.error }]}>{formatDate(task.dueDate)}</Text>
+                            )}
+                            <DatePicker
+                                modal
+                                open={openDatePicker}
+                                date={editForm.dueDate}
+                                mode="date"
+                                onConfirm={(date) => {
+                                    setOpenDatePicker(false);
+                                    setEditForm(prev => ({ ...prev, dueDate: date }));
+                                }}
+                                onCancel={() => {
+                                    setOpenDatePicker(false);
+                                }}
+                            />
                         </View>
                         <View style={styles.detailRow}>
                             <Icon name="flag" size={18} color={priorityConfig.color} />
                             <Text style={styles.detailLabel}>Priority:</Text>
-                            <View style={[styles.priorityBadge, { backgroundColor: priorityConfig.color + '15' }]}>
-                                <Text style={[styles.priorityText, { color: priorityConfig.color }]}>{priorityConfig.label}</Text>
-                            </View>
+                            {isEditing ? (
+                                <View style={{ flexDirection: 'row', gap: 5 }}>
+                                    {Object.entries(PRIORITY_CONFIG).map(([key, value]) => (
+                                        <TouchableOpacity
+                                            key={key}
+                                            style={[styles.priorityBadge, { backgroundColor: editForm.priority === key ? value.color : colors.backgroundLight, borderWidth: 1, borderColor: editForm.priority === key ? value.color : colors.border }]}
+                                            onPress={() => setEditForm(prev => ({ ...prev, priority: key }))}
+                                        >
+                                            <Text style={[styles.priorityText, { color: editForm.priority === key ? colors.white : colors.textSecondary }]}>{value.label}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            ) : (
+                                <View style={[styles.priorityBadge, { backgroundColor: priorityConfig.color + '15' }]}>
+                                    <Text style={[styles.priorityText, { color: priorityConfig.color }]}>{priorityConfig.label}</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
 
-                    {task.description && (
+                    {(task.description || isEditing) && (
                         <View style={styles.descriptionSection}>
                             <Text style={styles.descriptionTitle}>Description</Text>
-                            <Text style={styles.descriptionText}>{task.description}</Text>
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.editDescriptionInput}
+                                    value={editForm.description}
+                                    onChangeText={(text) => setEditForm(prev => ({ ...prev, description: text }))}
+                                    multiline
+                                    textAlignVertical="top"
+                                    placeholder="Add description..."
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            ) : (
+                                <Text style={styles.descriptionText}>{task.description}</Text>
+                            )}
                         </View>
                     )}
                 </View>
@@ -265,6 +377,9 @@ const getStyles = (colors) => StyleSheet.create({
     commentText: { fontSize: FONTS.sizes.md, color: colors.text, lineHeight: 20 },
     emptyComments: { alignItems: 'center', paddingVertical: SPACING.xl },
     emptyCommentsText: { fontSize: FONTS.sizes.sm, color: colors.textMuted, marginTop: SPACING.sm },
+    headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: colors.backgroundLight },
+    editTitleInput: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: colors.text, marginBottom: SPACING.md, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: SPACING.xs },
+    editDescriptionInput: { fontSize: FONTS.sizes.md, color: colors.text, minHeight: 80, backgroundColor: colors.backgroundLight, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: colors.border },
 });
 
 export default TaskDetailScreen;
