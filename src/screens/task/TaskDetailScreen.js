@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import DatePicker from 'react-native-date-picker';
 import {
     View,
@@ -9,6 +9,7 @@ import {
     ScrollView,
     Alert,
     FlatList,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -22,10 +23,17 @@ const TaskDetailScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { taskId } = route.params;
-    const { getTaskById, updateTask, addTaskComment, deleteTask, getProjectById } = useData();
+    const { getTaskById, updateTask, addTaskComment, deleteTask, getProjectById, refreshTasks } = useData();
     const { isAdmin, user } = useAuth();
     const { colors } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshTasks();
+        setRefreshing(false);
+    }, [refreshTasks]);
 
     const task = getTaskById(taskId);
     const project = task?.projectId ? getProjectById(task.projectId) : null;
@@ -176,7 +184,18 @@ const TaskDetailScreen = () => {
                 </View>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 <View style={[styles.taskCard, isOverdue && styles.taskCardOverdue]}>
                     {isEditing ? (
                         <TextInput

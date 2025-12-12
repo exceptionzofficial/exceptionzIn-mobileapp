@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
     Alert,
     Modal,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -18,11 +19,18 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const AdminPanel = () => {
     const navigation = useNavigation();
-    const { getAllUsers, createUser, blockUser, unblockUser, deleteUser, logout } = useAuth();
+    const { getAllUsers, createUser, blockUser, unblockUser, deleteUser, logout, refreshUsers } = useAuth();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
     const [isLoading, setIsLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshUsers();
+        setRefreshing(false);
+    }, [refreshUsers]);
 
     const users = getAllUsers().filter(u => u.role !== 'admin');
     const activeCount = users.filter(u => !u.isBlocked).length;
@@ -169,6 +177,14 @@ const AdminPanel = () => {
                         <Icon name="account-multiple-outline" size={48} color={COLORS.textMuted} />
                         <Text style={styles.emptyText}>No team members yet</Text>
                     </View>
+                }
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[COLORS.primary]}
+                        tintColor={COLORS.primary}
+                    />
                 }
             />
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import DatePicker from 'react-native-date-picker';
 import {
     View,
@@ -9,6 +9,7 @@ import {
     ScrollView,
     Alert,
     Image,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -24,10 +25,17 @@ const ProjectDetailScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { projectId } = route.params;
-    const { getProjectById, updateProject, updateProjectModule, addProjectModule, deleteProject, getClientById } = useData();
+    const { getProjectById, updateProject, updateProjectModule, addProjectModule, deleteProject, getClientById, refreshProjects } = useData();
     const { isAdmin, getActiveUsers } = useAuth();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshProjects();
+        setRefreshing(false);
+    }, [refreshProjects]);
 
     const project = getProjectById(projectId);
     const teamMembers = getActiveUsers();
@@ -424,7 +432,18 @@ const ProjectDetailScreen = () => {
                 )}
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 <View style={styles.heroCard}>
                     <Image source={{ uri: project.imageUrl || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400' }} style={styles.heroImage} />
                     <Text style={styles.projectName}>{project.name}</Text>

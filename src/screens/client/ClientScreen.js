@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     StyleSheet,
     TextInput,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,11 +18,18 @@ import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ClientScreen = () => {
     const navigation = useNavigation();
-    const { clients } = useData();
+    const { clients, refreshClients } = useData();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshClients();
+        setRefreshing(false);
+    }, [refreshClients]);
 
     const STATUS_CONFIG = {
         new_lead: { label: 'New Lead', color: colors.info, icon: 'star-outline' },
@@ -186,6 +194,14 @@ const ClientScreen = () => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={renderEmpty}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
             />
 
             {/* FAB */}

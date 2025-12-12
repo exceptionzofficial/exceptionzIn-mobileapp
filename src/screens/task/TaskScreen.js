@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     StyleSheet,
     TextInput,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -18,13 +19,20 @@ import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const TaskScreen = () => {
     const navigation = useNavigation();
-    const { tasks, getProjectById } = useData();
+    const { tasks, getProjectById, refreshTasks } = useData();
     const { user } = useAuth();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [showMyTasks, setShowMyTasks] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshTasks();
+        setRefreshing(false);
+    }, [refreshTasks]);
 
     const STATUS_CONFIG = {
         todo: { label: 'To Do', color: colors.info, icon: 'checkbox-blank-circle-outline' },
@@ -203,6 +211,14 @@ const TaskScreen = () => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={renderEmpty}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
             />
 
             {/* FAB */}

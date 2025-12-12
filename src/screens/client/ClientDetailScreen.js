@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import DatePicker from 'react-native-date-picker';
 import {
     View,
@@ -10,6 +10,7 @@ import {
     Alert,
     FlatList,
     Modal,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -23,10 +24,17 @@ const ClientDetailScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { clientId } = route.params;
-    const { getClientById, updateClient, addClientNote, deleteClient, createProjectFromClient } = useData();
+    const { getClientById, updateClient, addClientNote, deleteClient, createProjectFromClient, refreshClients } = useData();
     const { isAdmin } = useAuth();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshClients();
+        setRefreshing(false);
+    }, [refreshClients]);
 
     const STATUS_CONFIG = {
         new_lead: { label: 'New Lead', color: colors.info, icon: 'star-outline' },
@@ -201,7 +209,18 @@ const ClientDetailScreen = () => {
                 </View>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 <View style={styles.infoCard}>
                     <View style={styles.infoHeader}>
                         <View style={[styles.avatar, { backgroundColor: statusConfig.color + '20' }]}>

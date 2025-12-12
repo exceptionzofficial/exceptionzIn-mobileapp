@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     StyleSheet,
     TextInput,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,11 +18,18 @@ import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ProjectScreen = () => {
     const navigation = useNavigation();
-    const { projects, getClientById } = useData();
+    const { projects, getClientById, refreshProjects } = useData();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshProjects();
+        setRefreshing(false);
+    }, [refreshProjects]);
 
     const STATUS_CONFIG = {
         planning: { label: 'Planning', color: colors.info, icon: 'clipboard-text-outline' },
@@ -185,6 +193,14 @@ const ProjectScreen = () => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={renderEmpty}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
             />
 
             {/* FAB */}

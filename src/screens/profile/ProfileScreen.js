@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,7 @@ import {
     Switch,
     StatusBar,
     Modal,
+    RefreshControl,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,7 +32,7 @@ const BANK_DETAILS = {
 };
 
 const ProfileScreen = () => {
-    const { user, logout, updateUserProfile } = useAuth();
+    const { user, logout, updateUserProfile, refreshUsers } = useAuth();
     const { colors, isDark, toggleTheme } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -39,6 +40,13 @@ const ProfileScreen = () => {
     const [showBankDetails, setShowBankDetails] = useState(false);
     const [showQRCode, setShowQRCode] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        if (refreshUsers) await refreshUsers();
+        setRefreshing(false);
+    }, [refreshUsers]);
 
     const [editData, setEditData] = useState({
         name: user?.name || '',
@@ -109,7 +117,18 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
                     <TouchableOpacity style={styles.avatarContainer} onPress={handleImagePick}>

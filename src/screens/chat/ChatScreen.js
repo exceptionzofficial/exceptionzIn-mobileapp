@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     StatusBar,
+    RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,12 +18,20 @@ import { FONTS, SPACING, RADIUS, SHADOWS } from '../../utils/theme';
 
 const ChatScreen = () => {
     const navigation = useNavigation();
-    const { user, getActiveUsers } = useAuth();
-    const { getLastMessage, getUnreadCount } = useData();
+    const { user, getActiveUsers, refreshUsers } = useAuth();
+    const { getLastMessage, getUnreadCount, refreshAll } = useData();
     const { colors, isDark } = useTheme();
     const styles = useMemo(() => getStyles(colors), [colors]);
+    const [refreshing, setRefreshing] = useState(false);
 
     const teamMembers = getActiveUsers().filter(u => u.id !== user?.id);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        if (refreshUsers) await refreshUsers();
+        await refreshAll();
+        setRefreshing(false);
+    }, [refreshUsers, refreshAll]);
 
     const formatTime = (timestamp) => {
         if (!timestamp) return '';
@@ -108,6 +117,14 @@ const ChatScreen = () => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={renderEmpty}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
+                    />
+                }
             />
         </SafeAreaView>
     );
